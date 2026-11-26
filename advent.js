@@ -152,6 +152,7 @@ function initDay() {
   const n = Number(document.body.dataset.day);
   const day = dayByNumber(n);
   snow();
+  Music.init();
 
   const unlocked = isUnlocked(n);
   const head = document.getElementById('day-head');
@@ -193,6 +194,7 @@ function initDay() {
 // ============ ARCHIVE PAGE ============
 function initArchive() {
   snow(36);
+  Music.init();
   masterBanner();
   secretTaps(document.getElementById('plop-hero'));
   const today = todayNumber();
@@ -232,3 +234,114 @@ function initArchive() {
     return `<div class="stat"><span>${name}</span><b>${b === undefined ? '–' : b}</b></div>`;
   }).join('');
 }
+
+// ============ BACKGROUND MUSIC (original, composed in code) ============
+// A soft music-box Christmas loop. Starts on the first tap (browsers block autoplay),
+// pauses while any video plays, and the ♪ button mutes it (remembered on this phone).
+const Music = (() => {
+  const BPM = 84, EIGHTH = 60 / BPM / 2;
+  const N = n => 440 * Math.pow(2, (n - 69) / 12);
+  // chords per bar (MIDI roots + chord tones), 8 bars: C Am F G C Am Dm G
+  const CHORDS = [[48, [60, 64, 67]], [45, [57, 60, 64]], [41, [57, 60, 65]], [43, [55, 59, 62]],
+                  [48, [60, 64, 67]], [45, [57, 60, 64]], [38, [57, 62, 65]], [43, [55, 59, 62]]];
+  // melody per bar: [midi, length in eighths]
+  const MEL = [
+    [[76, 2], [79, 2], [84, 3], [83, 1]],
+    [[81, 2], [79, 2], [76, 4]],
+    [[77, 2], [81, 2], [84, 2], [81, 2]],
+    [[79, 4], [74, 2], [77, 2]],
+    [[76, 2], [79, 2], [84, 2], [88, 2]],
+    [[86, 2], [84, 2], [81, 4]],
+    [[77, 2], [81, 2], [86, 2], [84, 2]],
+    [[83, 3], [81, 1], [79, 4]]
+  ];
+  let ctx, master, timer, bar = 0, nextTime = 0, playing = false, ducked = false;
+
+  function tone(freq, t, dur, type, vol) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  }
+  function bell(freq, t, dur, vol) { // music-box: sine + quiet octave shimmer
+    tone(freq, t, dur, 'sine', vol);
+    tone(freq * 2, t, dur * 0.5, 'sine', vol * 0.18);
+  }
+
+  function scheduleBar(b, t) {
+    const [root, tones] = CHORDS[b % 8];
+    tone(N(root), t, EIGHTH * 4, 'triangle', 0.22);              // bass, half notes
+    tone(N(root), t + EIGHTH * 4, EIGHTH * 4, 'triangle', 0.18);
+    for (let k = 0; k < 8; k++) {                                // gentle arpeggio
+      const n = tones[[0, 1, 2, 1, 0, 1, 2, 1][k]];
+      bell(N(n), t + k * EIGHTH, EIGHTH * 2.2, 0.05);
+    }
+    let pos = 0;                                                 // melody
+    MEL[b % 8].forEach(([n, len]) => { bell(N(n), t + pos * EIGHTH, EIGHTH * (len + 1.5), 0.14); pos += len; });
+  }
+
+  function loop() {
+    while (nextTime < ctx.currentTime + 0.6) {
+      scheduleBar(bar, nextTime);
+      nextTime += EIGHTH * 8; bar++;
+    }
+  }
+
+  function setVol(v, ramp = 0.6) {
+    if (!master) return;
+    master.gain.cancelScheduledValues(ctx.currentTime);
+    master.gain.setTargetAtTime(v, ctx.currentTime, ramp / 3);
+  }
+
+  function start() {
+    if (playing || muted()) return;
+    try {
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        master = ctx.createGain(); master.gain.value = 0.0001;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+        master.connect(lp); lp.connect(ctx.destination);
+      }
+      ctx.resume();
+      nextTime = ctx.currentTime + 0.1;
+      timer = setInterval(loop, 150); loop();
+      playing = true;
+      setVol(ducked ? 0.0001 : 0.35, 1.5);
+    } catch (e) {}
+  }
+  function stop() {
+    if (!playing) return;
+    setVol(0.0001, 0.4);
+    clearInterval(timer); playing = false;
+  }
+  const muted = () => store.get('music-off', false);
+
+  function button() {
+    const b = document.createElement('button');
+    b.className = 'music-btn';
+    const paint = () => { b.textContent = muted() ? '♪̸' : '♪'; b.setAttribute('aria-label', muted() ? 'Turn music on' : 'Turn music off'); b.classList.toggle('off', muted()); };
+    paint();
+    b.onclick = e => {
+      e.stopPropagation();
+      store.set('music-off', !muted());
+      paint();
+      muted() ? stop() : start();
+    };
+    document.body.appendChild(b);
+  }
+
+  function init() {
+    button();
+    const kick = () => { start(); };
+    document.addEventListener('pointerdown', kick, { once: true, capture: true });
+    // duck while any video plays
+    document.addEventListener('play', e => { if (e.target.tagName === 'VIDEO') { ducked = true; setVol(0.0001, 0.3); } }, true);
+    const unduck = e => { if (e.target.tagName === 'VIDEO') { ducked = false; if (playing) setVol(0.35, 1); } };
+    document.addEventListener('pause', unduck, true);
+    document.addEventListener('ended', unduck, true);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
+  }
+  return { init, start, stop };
+})();

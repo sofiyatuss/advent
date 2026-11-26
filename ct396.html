@@ -6,17 +6,28 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 11</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 16px 12px; }
+  .intro { text-align: center; font-size: 22px; margin: 0 0 16px; }
+  .letter-card { background: #fff; border: 4px solid var(--ink); margin: 0 0 20px; box-shadow: 0 4px 0 rgba(58,42,32,.4); }
+  .letter-card .from {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--red); color: var(--cream);
+    border-bottom: 4px solid var(--ink); font-family: 'Pixelify Sans', monospace; font-size: 20px;
+  }
+  .letter-card .stamp { margin-left: auto; width: 34px; height: 40px; background: var(--cream); border: 2px dashed var(--ink); padding: 2px; }
+  .letter-card .stamp svg { width: 100%; height: 100%; }
+  .letter-card video { display: block; width: 100%; height: auto; background: #111; }
+  .letter-card p { margin: 0; padding: 10px 12px; font-size: 20px; }
+</style>
 </head>
 <body data-day="11">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 11: Messages for you — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Messages for you</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 11: Messages for you ===== -->
+    <p class="intro hand">Some people have something to tell you</p>
+    <div id="mail"></div>
     <!-- ===== end of day 11 content ===== -->
   </main>
 
@@ -24,6 +35,24 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the messages: to add one, upload the video as msg-name.mp4 (+ a poster msg-name.jpg if you have one) and add a line ----
+  const MESSAGES = [
+    { from: 'Ama', src: 'msg-ama.mp4', poster: 'msg-ama.jpg', note: '' }
+  ];
+
+  const mail = document.getElementById('mail');
+  MESSAGES.forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'letter-card';
+    d.innerHTML = `<div class="from">From ${m.from}<span class="stamp">${plopSVG({ outfit: '#E07A5F' })}</span></div>
+      <video src="${m.src}" ${m.poster ? `poster="${m.poster}"` : ''} controls playsinline preload="metadata"></video>
+      ${m.note ? `<p class="hand">${m.note}</p>` : ''}`;
+    mail.appendChild(d);
+  });
+  mail.addEventListener('play', e => mail.querySelectorAll('video').forEach(v => { if (v !== e.target) v.pause(); }), true);
+</script>
 </body>
 </html>

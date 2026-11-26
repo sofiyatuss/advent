@@ -134,3 +134,12 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 
 /* handwriting for letters and notes */
 .hand, .hand p { font-family: 'Patrick Hand', 'Nunito', 'Comic Sans MS', cursive; }
+
+/* ---------- music button ---------- */
+.music-btn {
+  position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 15; width: 46px; height: 46px;
+  font-family: 'Nunito', sans-serif; font-size: 24px; line-height: 1; color: var(--ink); background: var(--gold);
+  border: var(--px) solid var(--ink); box-shadow: 0 var(--px) 0 var(--ink); cursor: pointer; padding: 0;
+}
+.music-btn.off { background: var(--cream); opacity: .8; }
+.music-btn:active { transform: translateY(var(--px)); box-shadow: none; }
