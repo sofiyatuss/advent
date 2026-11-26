@@ -11,7 +11,12 @@
   .hello h2 { font-size: 26px; }
   .rules { list-style: none; padding: 0; margin: 14px 0 18px; text-align: left; }
   .rules li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 8px 0; border-bottom: 2px dashed rgba(58, 42, 32, .25); font-size: 17px; }
-  .rules li b { font-size: 22px; text-align: center; }
+  .rules li b { font-size: 24px; text-align: center; line-height: 1.1; }
+  .rules .star { color: var(--ink); font-family: 'Nunito', sans-serif; }
+  .rules .heart { color: #C0392B; font-family: 'Nunito', sans-serif; }
+  .note { background: #fff; border: 3px solid var(--ink); padding: 14px 14px 4px; margin: 0 0 16px; text-align: left; transform: rotate(-1deg);
+    background-image: repeating-linear-gradient(transparent 0 30px, rgba(91, 127, 176, .18) 30px 32px); }
+  .note p { font-size: 21px; line-height: 1.45; margin: 0 0 10px; }
   .gift-btn { background: var(--gold); font-size: 22px; animation: wiggle 1s steps(2) infinite; }
   .envelope { display: none; margin-top: 6px; }
   .envelope.open { display: block; animation: pop .4s steps(4); }
@@ -39,16 +44,21 @@
   <main class="card hidden" id="content">
     <!-- ===== DAY 1: Welcome + gift ===== -->
     <div class="hello" id="hello">
-      <h2>Hi Del! ♥</h2>
+      <h2>Hi Del! <span style="color:#C0392B">♥</span></h2>
       <p>Welcome to Plop's Advent. For the next 24 days, every chip opens something new that I made just for you.</p>
       <ul class="rules">
-        <li><b>📲</b><span>Tap one chip a day. No skipping ahead, Plop is watching.</span></li>
-        <li><b>🐦</b><span>Sundays are pigeon game days.</span></li>
-        <li><b>⭐</b><span>Every door gives you a Plop sticker. Collect all 24.</span></li>
-        <li><b>💌</b><span>The green button at the bottom sends your answers straight to me.</span></li>
-        <li><b>🏠</b><span>"See all doors" takes you back to every day you've opened.</span></li>
+        <li><b class="star">☆</b><span>Tap one chip a day.</span></li>
+        <li><b class="star">☆</b><span>Sundays are game days.</span></li>
+        <li><b class="star">☆</b><span>Every door gives you a Plop sticker. Collect all 24.</span></li>
+        <li><b class="heart">♥</b><span>The green button at the bottom sends your answers to me.</span></li>
+        <li><b class="star">☆</b><span>"See all doors" takes you back to every day you've opened.</span></li>
       </ul>
-      <button class="btn gift-btn" id="gift-btn">Plop has a gift for you 🎁</button>
+      <div class="note hand">
+        <p>Happy first day of December! I hope your birthday went well, time for 24 days of fun!!!!</p>
+        <p>I made this because I think you deserve something fun every day. Hope you love it!</p>
+        <p>Let's start with a nice present, I really hope you don't have it yet. I remember you mentioned you had to let chat go… so here's something that might cheer you up and make life easier.</p>
+      </div>
+      <button class="btn gift-btn" id="gift-btn">Plop has a gift for you</button>
     </div>
 
     <div class="envelope" id="envelope">
