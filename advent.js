@@ -4,7 +4,7 @@ const SETTINGS = {
   fromName: 'Sofi',
   whatsapp: '',                  // your number for replies, international format without + or spaces, e.g. '4366012345678'
   year: 2026,
-  peekKey: 'plopsecret'          // open any page with ?peek=plopsecret on YOUR phone to preview locked days
+  // Master access: tap Plop 5 times quickly on any page and enter the code to unlock every day on THIS phone.
 };
 
 // ============ THE 24 DAYS ============
@@ -43,11 +43,53 @@ const store = {
   set(k, v) { try { localStorage.setItem('plop.' + k, JSON.stringify(v)); } catch (e) {} }
 };
 
-function isPeek() {
-  const p = new URLSearchParams(location.search).get('peek');
-  if (p === SETTINGS.peekKey) store.set('peek', true);
-  if (p === 'off') store.set('peek', false);
-  return store.get('peek', false);
+function isPeek() { return store.get('peek', false); }
+
+// ---- master access (code is stored scrambled) ----
+const MASTER = 'MTg5OQ==';
+function openMaster() {
+  if (document.getElementById('master')) return;
+  const m = document.createElement('div');
+  m.id = 'master'; m.className = 'master';
+  m.innerHTML = `<div class="master-box">
+      <h2>Master access</h2>
+      <input id="m-code" type="password" inputmode="numeric" autocomplete="off" placeholder="Code">
+      <div class="m-err" id="m-err"></div>
+      <button class="btn btn-reply" id="m-go">Unlock everything</button>
+      <button class="btn" id="m-x">Cancel</button>
+    </div>`;
+  document.body.appendChild(m);
+  const inp = m.querySelector('#m-code'), err = m.querySelector('#m-err');
+  inp.focus();
+  inp.addEventListener('input', () => err.textContent = '');
+  const go = () => {
+    if (!inp.value.trim()) { err.textContent = 'Enter the code first'; return; }
+    if (btoa(inp.value.trim()) !== MASTER) { err.textContent = 'Wrong code. Plop is suspicious.'; inp.value = ''; return; }
+    store.set('peek', true); location.reload();
+  };
+  m.querySelector('#m-go').onclick = go;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  m.querySelector('#m-x').onclick = () => m.remove();
+}
+function lockAgain() { store.set('peek', false); location.reload(); }
+
+// tap an element 5 times within 2 seconds to open master access
+function secretTaps(el) {
+  if (!el) return;
+  let taps = [];
+  el.addEventListener('click', () => {
+    const now = Date.now();
+    taps = taps.filter(t => now - t < 2000); taps.push(now);
+    if (taps.length >= 5) { taps = []; openMaster(); }
+  });
+}
+function masterBanner() {
+  if (!isPeek()) return;
+  const b = document.createElement('div');
+  b.className = 'master-banner';
+  b.innerHTML = `<span>🔑 Master mode: everything unlocked</span><button id="lock-again">Lock again</button>`;
+  document.body.prepend(b);
+  b.querySelector('#lock-again').onclick = lockAgain;
 }
 
 // Which day of December is it in Vienna? 0 = before Dec 1, 25 = after Dec 24
@@ -119,6 +161,8 @@ function initDay() {
     <div class="plop-sm" id="plop-head"></div>
     <h1>${unlocked ? day.title : '???'}</h1>`;
   mountPlop(document.getElementById('plop-head'), { outfit: day.outfit });
+  secretTaps(document.getElementById('plop-head'));
+  masterBanner();
 
   const content = document.getElementById('content');
   const foot = document.getElementById('day-foot');
@@ -149,7 +193,8 @@ function initDay() {
 // ============ ARCHIVE PAGE ============
 function initArchive() {
   snow(36);
-  isPeek();
+  masterBanner();
+  secretTaps(document.getElementById('plop-hero'));
   const today = todayNumber();
   const got = opened();
   mountPlop(document.getElementById('plop-hero'), { outfit: '#B5473A' });

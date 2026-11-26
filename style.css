@@ -118,3 +118,12 @@ h1 { font-weight: 600; }
 @keyframes fall { to { transform: translate(30px, 110vh); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes wiggle { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+/* ---------- master access ---------- */
+.master { position: fixed; inset: 0; z-index: 20; background: rgba(43, 34, 56, .85); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.master-box { background: var(--wall); border: var(--px) solid var(--ink); box-shadow: 0 var(--px) 0 var(--ink); padding: 18px; width: 100%; max-width: 320px; text-align: center; }
+.master-box h2 { margin: 0 0 12px; }
+.master-box input { width: 100%; font-family: inherit; font-size: 24px; text-align: center; letter-spacing: 6px; padding: 10px; border: var(--px) solid var(--ink); border-radius: 0; margin-bottom: 6px; }
+.m-err { color: var(--red); min-height: 22px; font-size: 15px; margin-bottom: 6px; }
+.master-banner { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--gold); color: var(--ink); border-bottom: var(--px) solid var(--ink); padding: 6px 12px; font-size: 15px; }
+.master-banner button { font-family: inherit; font-size: 14px; background: var(--cream); border: 3px solid var(--ink); padding: 3px 8px; cursor: pointer; }

@@ -69,6 +69,7 @@ function plopSVG(opts = {}) {
 
 // Put a living (blinking) Plop into an element
 function mountPlop(el, opts = {}) {
+  if (!el) return;
   const draw = blink => { el.innerHTML = plopSVG(Object.assign({}, opts, { blink })); };
   draw(false);
   setInterval(() => { draw(true); setTimeout(() => draw(false), 150); }, 3000 + Math.random() * 1500);
