@@ -6,17 +6,38 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 21</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #B9824F; padding: 16px 12px; }
+  .intro { text-align: center; color: var(--cream); font-size: 22px; margin: 0 0 6px; }
+  .sub { text-align: center; color: var(--cream); opacity: .85; font-size: 15px; margin: 0 0 16px; }
+  .year { font-family: 'Pixelify Sans', monospace; color: var(--cream); background: var(--ink); display: inline-block; padding: 2px 10px; margin: 10px 0 12px; font-size: 16px; }
+  .note {
+    position: relative; padding: 16px 14px 12px; margin: 0 0 16px; border: 3px solid var(--ink);
+    box-shadow: 0 4px 0 rgba(58, 42, 32, .5);
+  }
+  .note::before {
+    content: ''; position: absolute; top: -9px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px;
+    background: var(--red); border: 3px solid var(--ink); border-radius: 50%;
+  }
+  .note q { display: block; quotes: none; font-size: 23px; line-height: 1.3; }
+  .note q + q { margin-top: 6px; }
+  .note .who { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; }
+  .note .who span { font-size: 14px; opacity: .75; }
+  .note .who b { font-family: 'Pixelify Sans', monospace; font-size: 13px; white-space: nowrap; }
+  .heart { font-size: 22px; background: none; border: 0; cursor: pointer; padding: 0 2px; line-height: 1; }
+  .fav { position: sticky; bottom: 10px; z-index: 3; }
+</style>
 </head>
 <body data-day="21">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 21: Inside jokes dictionary — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Inside jokes dictionary</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 21: The quote wall ===== -->
+    <p class="intro hand">Things you've said this year</p>
+    <p class="sub">Some of them should never be repeated in public. Tap ♡ on your favourite.</p>
+    <div id="wall"></div>
+    <a class="btn btn-reply fav hidden" id="send" target="_blank" rel="noopener">Send my favourite to Sofi</a>
     <!-- ===== end of day 21 content ===== -->
   </main>
 
@@ -24,6 +45,60 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the quotes, oldest first. lines = what was said, who = speaker/context, date = 'DD.MM.YYYY' or '' ----
+  const QUOTES = [
+    { lines: ['i forgot to do one line friday', "wait who's doing lines on friday?"], who: '', date: '27.11.2025' },
+    { lines: ['давай уходить. учпучмаки пришли'], who: 'Деля', date: '26.12.2025' },
+    { lines: ['sigma. like sigma not sigma 🤫. from lion king'], who: 'Deliya (she meant Simba)', date: '28.12.2025' },
+    { lines: ['кем вы считаете я'], who: 'Деля', date: '31.01.2026' },
+    { lines: ['your mom is like my second dad'], who: 'Deliya', date: '11.07.2026' },
+    { lines: ["you're never gonna find a guy"], who: 'Deliya, to me', date: '12.07.2026' },
+    { lines: ['i just go on snap map you know seeing where everyone is, minding their business'], who: 'Deliya', date: '23.08.2026' },
+    { lines: ['right when i moved on', 'deliya, move back in'], who: 'on The Devil', date: '01.09.2026' },
+    { lines: ["eduarda? she took a man's name just like she's trynna take your man"], who: 'Sofiya', date: '04.09.2026' },
+    { lines: ['the atmosphere here is very special', 'okay now let me tell you more about the atmosphere between me and my ex'], who: 'Deliya', date: '01.10.2026' },
+    { lines: ['and milan likes it that way'], who: "Del, on David and Milan's gf not knowing", date: '18.10.2026' },
+    { lines: ['2 его друга видели меня с двумя разными блондинами'], who: 'Deliya', date: '' },
+    { lines: ["chat is like you're on your own lil bro"], who: '', date: '' },
+    { lines: ["tell the wolves, i'm home"], who: '', date: '' }
+  ];
+
+  const COLORS = ['#FFF3B0', '#FFD6E0', '#D6F0FF', '#E4F1DF', '#F3E6CF', '#E8DDF7'];
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const nice = d => { if (!d) return 'undated classic'; const [dd, mm, yy] = d.split('.').map(Number); return `${dd} ${MONTHS[mm - 1]} ${yy}`; };
+
+  const wall = document.getElementById('wall');
+  let fav = store.get('fav-quote', null);
+  let lastYear = null;
+  QUOTES.forEach((q, i) => {
+    const year = q.date ? q.date.split('.')[2] : 'Timeless';
+    if (year !== lastYear) { wall.insertAdjacentHTML('beforeend', `<div class="year">${year}</div>`); lastYear = year; }
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.style.background = COLORS[i % COLORS.length];
+    n.style.transform = `rotate(${((i * 53) % 5) - 2}deg)`;
+    n.innerHTML = `${q.lines.map(l => `<q class="hand">“${l}”</q>`).join('')}
+      <div class="who"><span>${q.who ? '— ' + q.who : ''}</span><span style="display:flex;align-items:center;gap:8px"><b>${nice(q.date)}</b><button class="heart" data-i="${i}" aria-label="Favourite">${fav === i ? '❤️' : '🤍'}</button></span></div>`;
+    wall.appendChild(n);
+  });
+
+  const send = document.getElementById('send');
+  function updateFav() {
+    wall.querySelectorAll('.heart').forEach(h => h.textContent = Number(h.dataset.i) === fav ? '❤️' : '🤍');
+    if (fav === null) return send.classList.add('hidden');
+    const q = QUOTES[fav];
+    send.href = whatsappLink('Day 21, my favourite quote: "' + q.lines.join('" / "') + '"');
+    send.classList.remove('hidden');
+  }
+  wall.addEventListener('click', e => {
+    const h = e.target.closest('.heart'); if (!h) return;
+    const i = Number(h.dataset.i);
+    fav = fav === i ? null : i; store.set('fav-quote', fav); updateFav();
+  });
+  updateFav();
+</script>
 </body>
 </html>

@@ -6,17 +6,52 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 15</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #6E1423; color: var(--cream); border-color: #2A0A10; padding: 0 0 16px; overflow: hidden; position: relative; }
+  .curtain { height: 26px; background: repeating-linear-gradient(90deg, #8E1B2E 0 18px, #6E1423 18px 36px); border-bottom: 4px solid #2A0A10; }
+  .inner { padding: 14px 12px 0; }
+  .marquee { text-align: center; font-family: 'Pixelify Sans', monospace; color: var(--gold); font-size: 26px; margin: 4px 0 0; letter-spacing: 1px; }
+  .sub { text-align: center; font-size: 15px; opacity: .85; margin: 2px 0 14px; }
+  .host { display: flex; gap: 10px; align-items: center; background: rgba(0, 0, 0, .25); border: 3px solid #2A0A10; padding: 8px 10px; margin-bottom: 14px; }
+  .host .plop-xs { width: 58px; }
+  .host p { margin: 0; font-size: 19px; }
+  .count { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 14px; opacity: .75; margin: 0 0 6px; }
+  .award { background: #FFF8EC; color: var(--ink); border: 4px solid var(--gold); outline: 4px solid #2A0A10; padding: 14px 12px; text-align: center; }
+  .award h2 { font-size: 21px; margin: 0; line-height: 1.2; }
+  .award .note { font-size: 20px; color: #8E1B2E; margin: 4px 0 10px; }
+  .noms { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0 12px; }
+  .noms span { border: 2px solid var(--ink); padding: 5px; font-size: 15px; background: #fff; }
+  .noms small { grid-column: 1 / -1; font-family: 'Pixelify Sans', monospace; font-size: 12px; letter-spacing: 1px; opacity: .6; }
+  .env { background: var(--gold); font-size: 21px; }
+  .winner { display: none; margin-top: 4px; }
+  .winner.on { display: block; animation: pop .45s steps(4); }
+  .trophy { width: 90px; margin: 0 auto; display: block; }
+  .winner b { display: block; font-family: 'Pixelify Sans', monospace; font-size: 30px; color: #8E1B2E; margin-top: 4px; }
+  .nav { margin-top: 14px; }
+  .cabinet { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 14px; }
+  .cabinet div { background: rgba(0, 0, 0, .25); border: 3px solid #2A0A10; padding: 8px 4px; text-align: center; font-size: 12px; line-height: 1.2; }
+  .cabinet svg { width: 44px; display: block; margin: 0 auto 4px; }
+  textarea { width: 100%; min-height: 110px; font-family: 'Patrick Hand', 'Nunito', cursive; font-size: 20px; padding: 10px; border: 4px solid #2A0A10; border-radius: 0; background: #FFF8EC; color: var(--ink); }
+  .err { color: var(--gold); min-height: 20px; font-size: 15px; margin: 4px 0; }
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .confetti i { position: absolute; top: -12px; width: 8px; height: 8px; animation: drop 1.6s linear forwards; }
+  @keyframes drop { to { transform: translate(var(--dx), 700px) rotate(540deg); } }
+  @keyframes pop { 0% { transform: scale(.3); } 100% { transform: scale(1); } }
+</style>
 </head>
 <body data-day="15">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 15: The friendship awards — content goes here ===== -->
-    <div class="placeholder">
-      <h2>The friendship awards</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 15: The friendship awards ===== -->
+    <div class="curtain"></div>
+    <div class="inner">
+      <p class="marquee">THE PLOPPYS 2026</p>
+      <p class="sub">The most prestigious awards in the friendship industry</p>
+      <div id="stage"></div>
     </div>
+    <div class="confetti" id="confetti"></div>
     <!-- ===== end of day 15 content ===== -->
   </main>
 
@@ -24,6 +59,95 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the awards: note = your little subtitle, winner = who wins, nominees = the others on the list ----
+  const AWARDS = [
+    { title: 'Best Actress in a Situationship', note: '', winner: 'Deliya' },
+    { title: 'Most Likely to Run Away and Come Back Transformed', note: '', winner: 'Deliya' },
+    { title: 'The Surveillance Award', note: 'holy control freak', winner: 'Deliya' },
+    { title: 'Smartest Person Ever', note: '"Didn\'t Oceania sink?"', winner: 'Deliya' },
+    { title: 'Worst Financial Decision of 2026', note: 'dare I say the coke?', winner: 'Deliya' },
+    { title: 'Best Gay Fanfiction Writer', note: '', winner: 'Deliya' }
+  ];
+  const NOMINEES = ['Deliya', 'Sofiya', 'The Devil', 'Plop'];
+  const HOST_LINES = [
+    'Good evening and welcome to the Ploppys. I am your host, Plop.',
+    'The envelope, please.',
+    'The jury deliberated for hours. (Minutes.)',
+    'This one was controversial.',
+    'No surprises here, honestly.',
+    'And our final award of the night…'
+  ];
+
+  const trophy = (c = '#E9B84A') => `<svg class="trophy" viewBox="0 0 16 18" shape-rendering="crispEdges" aria-hidden="true">
+    <rect x="3" y="1" width="10" height="7" fill="${c}"/><rect x="1" y="2" width="2" height="4" fill="${c}"/><rect x="13" y="2" width="2" height="4" fill="${c}"/>
+    <rect x="4" y="8" width="8" height="2" fill="${c}"/><rect x="7" y="10" width="2" height="3" fill="${c}"/><rect x="4" y="13" width="8" height="2" fill="#8E5F36"/>
+    <rect x="3" y="15" width="10" height="2" fill="#3A2A20"/><rect x="5" y="2" width="2" height="4" fill="#FFF3B0"/></svg>`;
+
+  const stage = document.getElementById('stage');
+  let i = 0;
+
+  function confetti() {
+    const box = document.getElementById('confetti');
+    const cols = ['#E9B84A', '#FFF8EC', '#E05A7A', '#5FA8A0', '#8C6FA8'];
+    for (let k = 0; k < 40; k++) {
+      const c = document.createElement('i');
+      c.style.left = Math.random() * 100 + '%';
+      c.style.background = cols[k % cols.length];
+      c.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+      c.style.animationDelay = Math.random() * .4 + 's';
+      box.appendChild(c);
+      setTimeout(() => c.remove(), 2300);
+    }
+  }
+
+  function show() {
+    if (i >= AWARDS.length) return speech();
+    const a = AWARDS[i];
+    const noms = [a.winner, ...NOMINEES.filter(n => n !== a.winner)].sort(() => Math.random() - .5);
+    stage.innerHTML = `
+      <div class="host"><div class="plop-xs">${plopSVG({ outfit: '#1C1C22' })}</div><p class="hand">${HOST_LINES[i % HOST_LINES.length]}</p></div>
+      <p class="count">AWARD ${i + 1} OF ${AWARDS.length}</p>
+      <div class="award">
+        <h2>${a.title}</h2>
+        ${a.note ? `<p class="note hand">(${a.note})</p>` : '<p class="note"></p>'}
+        <div class="noms"><small>THE NOMINEES ARE…</small>${noms.map(n => `<span>${n}</span>`).join('')}</div>
+        <button class="btn env" id="open">✉️ Open the envelope</button>
+        <div class="winner" id="win">${trophy()}<span class="hand" style="font-size:19px">And the winner is…</span><b>${a.winner.toUpperCase()}</b></div>
+      </div>
+      <div class="nav"><button class="btn btn-reply hidden" id="next">${i < AWARDS.length - 1 ? 'Next award →' : 'Go to the stage 🎤'}</button></div>`;
+    document.getElementById('open').onclick = e => {
+      e.target.classList.add('hidden');
+      document.getElementById('win').classList.add('on');
+      document.getElementById('next').classList.remove('hidden');
+      confetti();
+    };
+    document.getElementById('next').onclick = () => { i++; show(); document.getElementById('content').scrollIntoView({ behavior: 'smooth' }); };
+  }
+
+  function speech() {
+    const mine = AWARDS.filter(a => a.winner === 'Deliya');
+    stage.innerHTML = `
+      <div class="host"><div class="plop-xs">${plopSVG({ outfit: '#1C1C22' })}</div><p class="hand">Deliya, you won ${mine.length} out of ${AWARDS.length}. A historic night. Please come to the stage.</p></div>
+      <p class="count">YOUR TROPHY CABINET</p>
+      <div class="cabinet">${mine.map(a => `<div>${trophy()}${a.title}</div>`).join('')}</div>
+      <p class="count">YOUR ACCEPTANCE SPEECH</p>
+      <textarea id="sp" placeholder="I'd like to thank…"></textarea>
+      <p class="err" id="err"></p>
+      <a class="btn btn-reply" id="send" target="_blank" rel="noopener">Send my speech to Sofi</a>`;
+    const sp = document.getElementById('sp'), send = document.getElementById('send'), err = document.getElementById('err');
+    sp.value = store.get('speech', '');
+    sp.oninput = () => { store.set('speech', sp.value); err.textContent = ''; };
+    send.onclick = e => {
+      if (!sp.value.trim()) { e.preventDefault(); err.textContent = 'The audience is waiting. Write something first.'; return; }
+      send.href = whatsappLink('Day 15, my acceptance speech at the Ploppys 🏆:\n' + sp.value.trim());
+    };
+    confetti();
+  }
+
+  show();
+</script>
 </body>
 </html>

@@ -6,17 +6,56 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 16</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #1F6B4A; border-color: var(--ink); padding: 14px 12px; color: var(--cream); }
+  .sign { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 30px; color: var(--gold); margin: 0; letter-spacing: 2px; }
+  .lights { display: flex; justify-content: center; gap: 8px; margin: 4px 0 12px; }
+  .lights i { width: 10px; height: 10px; background: var(--gold); border: 2px solid var(--ink); animation: blink 1s steps(1) infinite; }
+  .lights i:nth-child(even) { animation-delay: .5s; }
+  .machine { background: #B5473A; border: 4px solid var(--ink); padding: 12px; box-shadow: 0 5px 0 var(--ink); }
+  .reels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--ink); padding: 8px; }
+  .reel { height: 92px; background: #FFF8EC; overflow: hidden; position: relative; }
+  .strip { position: absolute; left: 0; right: 0; top: 0; }
+  .sym { height: 92px; display: flex; align-items: center; justify-content: center; font-size: 50px; }
+  .sym svg { width: 70px; height: 70px; }
+  .line { position: absolute; left: 0; right: 0; top: 50%; height: 3px; background: rgba(181, 71, 58, .45); pointer-events: none; }
+  .coins { display: flex; justify-content: space-between; align-items: center; margin: 12px 2px 10px; font-size: 18px; color: var(--cream); }
+  .coins b { font-family: 'Pixelify Sans', monospace; font-size: 26px; color: var(--gold); }
+  .spin { background: var(--gold); font-size: 26px; }
+  .spin:disabled { opacity: .6; }
+  .msg { text-align: center; min-height: 54px; font-size: 22px; margin: 10px 0 4px; color: var(--cream); }
+  .wallet h2 { color: var(--gold); text-align: center; font-size: 22px; margin: 18px 0 10px; }
+  .coupon {
+    background: #FFF8EC; color: var(--ink); border: 3px dashed var(--ink); padding: 10px 12px; margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+  }
+  .coupon b { font-family: 'Pixelify Sans', monospace; font-size: 18px; }
+  .coupon small { display: block; font-size: 13px; opacity: .6; }
+  .coupon a { font-family: 'Pixelify Sans', monospace; font-size: 14px; background: var(--pine); color: #fff; border: 2px solid var(--ink); padding: 6px 8px; text-decoration: none; }
+  .coupon.used { opacity: .5; }
+  .empty { text-align: center; opacity: .75; font-size: 16px; }
+  .paytable { font-size: 14px; text-align: center; opacity: .8; margin: 6px 0 0; }
+  @keyframes blink { 50% { background: #FFF8EC; } }
+  .win-flash { animation: flash .25s steps(2) 6; }
+  @keyframes flash { 50% { background: var(--gold); } }
+</style>
 </head>
 <body data-day="16">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 16: Plop Casino — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Plop Casino</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 16: Plop Casino ===== -->
+    <p class="sign">PLOP CASINO</p>
+    <div class="lights"></div>
+    <div class="machine" id="machine">
+      <div class="reels" id="reels"></div>
+      <div class="coins"><span>Crumbs <b id="coins">100</b></span><span>Spin costs <b>10</b></span></div>
+      <button class="btn spin" id="spin">SPIN 🎰</button>
     </div>
+    <p class="msg hand" id="msg">Three of a kind wins a real prize.</p>
+    <p class="paytable">3 the same = a coupon · 2 the same = +20 crumbs</p>
+    <div class="wallet"><h2>Your winnings</h2><div id="wallet"></div></div>
     <!-- ===== end of day 16 content ===== -->
   </main>
 
@@ -24,6 +63,110 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+  document.querySelector('.lights').innerHTML = '<i></i>'.repeat(12);
+
+  // ---- the real prizes (edit these!) ----
+  const PRIZES = [
+    'Coffee date',
+    'Cinema trip',
+    'I read your tarot',
+    'I buy you a drink',
+    'Tea at my place',
+    'Christmas market'
+  ];
+
+  const SYMS = ['plop', '🥐', '☕', '⚓', '💎', '🍒'];
+  const symHTML = s => s === 'plop' ? plopSVG({ outfit: '#1F6B4A' }) : s;
+
+  const S = store.get('casino', { coins: 100, won: [], used: [], spins: 0, sinceWin: 0 });
+  const save = () => store.set('casino', S);
+  const reels = document.getElementById('reels');
+  const strips = [];
+  for (let r = 0; r < 3; r++) {
+    const reel = document.createElement('div'); reel.className = 'reel';
+    const strip = document.createElement('div'); strip.className = 'strip';
+    strip.innerHTML = `<div class="sym">${symHTML(SYMS[r])}</div>`;
+    reel.appendChild(strip); reel.insertAdjacentHTML('beforeend', '<div class="line"></div>');
+    reels.appendChild(reel); strips.push(strip);
+  }
+
+  const coinsEl = document.getElementById('coins'), msg = document.getElementById('msg'), spinBtn = document.getElementById('spin');
+  const showCoins = () => coinsEl.textContent = S.coins;
+
+  function renderWallet() {
+    const w = document.getElementById('wallet');
+    if (!S.won.length) { w.innerHTML = '<p class="empty">Nothing yet. Keep spinning.</p>'; return; }
+    w.innerHTML = S.won.map(p => {
+      const used = S.used.includes(p);
+      return `<div class="coupon${used ? ' used' : ''}"><div><b>🎟️ ${p}</b><small>${used ? 'Redeemed' : 'Valid forever. Non-transferable.'}</small></div>
+        ${used ? '' : `<a href="${whatsappLink('Day 16: I am redeeming my coupon from Plop Casino: ' + p + ' 🎟️')}" target="_blank" rel="noopener" data-p="${p}">Redeem</a>`}</div>`;
+    }).join('');
+    w.querySelectorAll('a[data-p]').forEach(a => a.addEventListener('click', () => { S.used.push(a.dataset.p); save(); setTimeout(renderWallet, 300); }));
+  }
+
+  function pickResult() {
+    const left = PRIZES.filter(p => !S.won.includes(p));
+    // a little luck: guaranteed jackpot after 6 spins without one, and ~18% otherwise
+    const jackpot = left.length && (S.sinceWin >= 6 || Math.random() < .18);
+    if (jackpot) { const s = SYMS[Math.floor(Math.random() * SYMS.length)]; return [s, s, s]; }
+    let a, b, c;
+    do { a = SYMS[rand()]; b = SYMS[rand()]; c = SYMS[rand()]; } while (a === b && b === c);
+    return [a, b, c];
+  }
+  const rand = () => Math.floor(Math.random() * SYMS.length);
+
+  function spin() {
+    if (S.coins < 10) {
+      S.coins += 50; save(); showCoins();
+      msg.textContent = 'Out of crumbs! Plop lends you 50 (interest: one croissant).';
+      return;
+    }
+    S.coins -= 10; S.spins++; showCoins(); save();
+    spinBtn.disabled = true; msg.textContent = '…';
+    const res = pickResult();
+    strips.forEach((strip, r) => {
+      const n = 14 + r * 6, seq = [];
+      for (let k = 0; k < n; k++) seq.push(SYMS[rand()]);
+      seq.push(res[r]);
+      strip.style.transition = 'none';
+      strip.style.top = '0px';
+      strip.innerHTML = seq.map(s => `<div class="sym">${symHTML(s)}</div>`).join('');
+      void strip.offsetHeight;
+      strip.style.transition = `top ${1 + r * .45}s steps(${n})`;
+      strip.style.top = (-n * 92) + 'px';
+    });
+    setTimeout(() => finish(res), 1000 + 2 * 450 + 150);
+  }
+
+  function finish([a, b, c]) {
+    spinBtn.disabled = false;
+    if (a === b && b === c) {
+      const left = PRIZES.filter(p => !S.won.includes(p));
+      if (left.length) {
+        const prize = left[Math.floor(Math.random() * left.length)];
+        S.won.push(prize); S.sinceWin = 0;
+        msg.innerHTML = `JACKPOT! You won: <b>${prize}</b> 🎟️`;
+        document.getElementById('machine').classList.remove('win-flash'); void document.body.offsetWidth;
+        document.getElementById('machine').classList.add('win-flash');
+        toast(`<div class="plop-xs">${plopSVG({ outfit: '#D4A017' })}</div><div><b>JACKPOT!</b><br>${prize}</div>`);
+        if (S.won.length === PRIZES.length) setTimeout(() => msg.innerHTML = 'You cleaned out Plop Casino. Every prize is yours. 👑', 2500);
+      } else {
+        S.coins += 50; msg.textContent = 'Jackpot! But you already own every prize. +50 crumbs.';
+      }
+    } else if (a === b || b === c || a === c) {
+      S.coins += 20; S.sinceWin++;
+      msg.textContent = 'Two of a kind! +20 crumbs.';
+    } else {
+      S.sinceWin++;
+      msg.textContent = ['Nothing. Plop is sorry.', 'So close. (It wasn\'t close.)', 'The house always wins.', 'Try again, high roller.'][Math.floor(Math.random() * 4)];
+    }
+    save(); showCoins(); renderWallet();
+  }
+
+  spinBtn.onclick = spin;
+  showCoins(); renderWallet();
+</script>
 </body>
 </html>

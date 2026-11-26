@@ -61,7 +61,7 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
   border-bottom: var(--px) solid var(--ink);
 }
 
-.doors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.doors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .door {
   aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
   border: var(--px) solid var(--ink); text-decoration: none; color: var(--ink);
@@ -75,17 +75,17 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 .door.gold.shut { background: #F6DFA0; }
 .door:active { transform: translateY(var(--px)); box-shadow: none; }
 
-.sticker-book { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; background: var(--wood); border: var(--px) solid var(--ink); padding: 10px; }
-.sticker { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(255, 248, 236, .5); color: rgba(255, 248, 236, .6); font-size: 14px; }
+.sticker-book { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; background: var(--wood); border: var(--px) solid var(--ink); padding: 10px; }
+.sticker { min-width: 0; overflow: hidden; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(255, 248, 236, .5); color: rgba(255, 248, 236, .6); font-size: 14px; }
 .sticker.have { border: 2px solid var(--ink); background: var(--cream); padding: 2px; }
-.sticker svg { width: 100%; height: 100%; }
+.sticker svg { display: block; width: 100%; height: auto; max-height: 100%; }
 .row-head { display: flex; justify-content: space-between; align-items: baseline; }
 .row-head span { font-family: 'Nunito', sans-serif; font-size: 22px; }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat { background: var(--cream); border: 3px solid var(--ink); padding: 8px 10px; display: flex; flex-direction: column; }
 .stat span { font-size: 14px; opacity: .75; }
-.stat b { font-size: 26px; }
+.stat b { font-size: 22px; line-height: 1.15; overflow-wrap: anywhere; }
 
 /* ---------- day page ---------- */
 .day-head { text-align: center; color: var(--cream); padding-top: 6px; margin-bottom: 14px; }
@@ -133,4 +133,4 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 .master-banner button { font-family: inherit; font-size: 14px; background: var(--cream); border: 3px solid var(--ink); padding: 3px 8px; cursor: pointer; }
 
 /* handwriting for letters and notes */
-.hand, .hand p { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; }
+.hand, .hand p { font-family: 'Patrick Hand', 'Nunito', 'Comic Sans MS', cursive; }

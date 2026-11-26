@@ -6,24 +6,144 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 14</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #262046; color: #F3E6CF; border-color: #120E24; padding: 16px 12px; }
+  .intro { text-align: center; font-size: 22px; margin: 0 0 16px; }
+  .deck { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tcard {
+    aspect-ratio: 2 / 3.3; border: 4px solid #120E24; background: #5A3E7A; cursor: pointer; position: relative;
+    display: flex; align-items: center; justify-content: center; font-size: 34px; color: #E9B84A;
+    outline: 3px solid #E9B84A; outline-offset: -10px; animation: hover 2s steps(4) infinite;
+  }
+  .tcard:nth-child(2) { animation-delay: .3s; } .tcard:nth-child(3) { animation-delay: .6s; }
+  .tcard.face { background: #F3E6CF; color: #3A2A20; animation: none; flex-direction: column; justify-content: space-between; padding: 14px 6px; text-align: center; font-size: 13px; }
+  .tcard.face .ic { font-size: 30px; }
+  .tcard.face b { font-family: 'Pixelify Sans', monospace; font-size: 13px; }
+  .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 6px; text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 13px; color: #E9B84A; }
+  .reading { margin-top: 16px; display: none; }
+  .reading.on { display: block; }
+  .reading p { background: #352C5E; border: 3px solid #120E24; padding: 10px 12px; font-size: 20px; margin: 0 0 10px; }
+  .reading p b { font-family: 'Pixelify Sans', monospace; color: #E9B84A; display: block; font-size: 15px; }
+  .scare {
+    position: fixed; inset: 0; z-index: 50; background: #000; display: none; align-items: center; justify-content: center;
+  }
+  .scare.on { display: flex; }
+  .scare video { width: 100%; height: 100%; object-fit: cover; }
+  .scare .fallback { width: 92vw; animation: zoom .25s steps(3), shake .08s steps(2) infinite .25s; }
+  .after { text-align: center; font-size: 22px; margin: 0 0 12px; display: none; }
+  .after.on { display: block; }
+  @keyframes hover { 50% { transform: translateY(-4px); } }
+  @keyframes zoom { from { transform: scale(.1); } to { transform: scale(1); } }
+  @keyframes shake { 50% { transform: translate(6px, -6px); } }
+</style>
 </head>
 <body data-day="14">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 14: Draw a card — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Draw a card</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 14: Draw a card ===== -->
+    <p class="intro hand" id="intro">Madame Plop sees your future.<br>Turn the volume up 🔮, take a deep breath, and choose a card.</p>
+    <p class="after hand" id="after">lmaooo. okay okay. here's your real reading:</p>
+    <div class="deck" id="deck"></div>
+    <div class="labels" id="labels" style="display:none"><span>LOVE LIFE</span><span>BANK ACCOUNT</span><span>2027</span></div>
+    <div class="reading" id="reading"></div>
     <!-- ===== end of day 14 content ===== -->
   </main>
 
   <footer id="day-foot"></footer>
 </div>
+<div class="scare" id="scare"></div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- your jumpscare video: upload it as jumpscare.mp4 ----
+  const SCARE_VIDEO = 'jumpscare.mp4';
+
+  // ---- fortunes: one random card from each pile ----
+  const LABELS = ['LOVE LIFE', 'BANK ACCOUNT', '2027'];
+  // [numeral, emoji, real card name, your reading]
+  const LOVE = [
+    ['VI', '💞', 'The Lovers', "Someone is about to fall for you. Unfortunately, it might be a pigeon with a shiny neck."],
+    ['XV', '😈', 'The Devil', "Temptation, bad decisions and a Gemini. You already know who this is. Leave him on delivered."],
+    ['XVI', '⚡', 'The Tower', "A situationship collapses dramatically. Sofi is already making popcorn."],
+    ['XVIII', '🌙', 'The Moon', "Secrets and illusions. Two of his friends saw you with two different blondes. Again."],
+    ['IX', '🏮', 'The Hermit', "Your healing era begins. Time to heal (ghost everyone)."]
+  ];
+  const MONEY = [
+    ['X', '☸️', 'Wheel of Fortune', "Your luck is turning. Plop Casino will not survive you."],
+    ['0', '🃏', 'The Fool', "A brand-new beginning, and a terrible purchase you will defend forever."],
+    ['XII', '🙃', 'The Hanged Man', "Your money is stuck. Literally, in a bowl of water. Liquidated."],
+    ['IV', '👑', 'The Emperor', "CEO energy. 500+ LinkedIn connections incoming."]
+  ];
+  const YEAR = [
+    ['XVII', '⭐', 'The Star', "Hope, healing and a glow-up. 2027 is your year."],
+    ['XXI', '🌍', 'The World', "Travel is coming: London, Japan, Korea. WE ARE GOING."],
+    ['VII', '🛴', 'The Chariot', "Unstoppable. You're riding an e-scooter straight into your destiny."],
+    ['XIX', '☀️', 'The Sun', "Joy, success and at least one iconic photo."],
+    ['I', '🪄', 'The Magician', "Whatever you manifest, you get. Main character year."]
+  ];
+  const PAST = LOVE, PRESENT = MONEY, FUTURE = YEAR;
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  const deck = document.getElementById('deck');
+  for (let k = 0; k < 3; k++) {
+    const c = document.createElement('div');
+    c.className = 'tcard'; c.textContent = '✦';
+    c.onclick = jumpscare;
+    deck.appendChild(c);
+  }
+
+  let scared = store.get('scared', false);
+
+  function jumpscare() {
+    if (scared) return reveal();
+    scared = true; store.set('scared', true);
+    const sc = document.getElementById('scare');
+    sc.classList.add('on');
+    const v = document.createElement('video');
+    v.src = SCARE_VIDEO; v.playsInline = true; v.setAttribute('playsinline', '');
+    let done = false;
+    const end = () => { if (done) return; done = true; sc.classList.remove('on'); sc.innerHTML = ''; reveal(); };
+    const fallback = () => {
+      sc.innerHTML = `<div class="fallback">${plopSVG({ outfit: '#5A3E7A' })}</div>`;
+      try { // short scream with the Web Audio API
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(880, ac.currentTime); o.frequency.exponentialRampToValueAtTime(140, ac.currentTime + .9);
+        g.gain.setValueAtTime(.6, ac.currentTime); g.gain.exponentialRampToValueAtTime(.01, ac.currentTime + 1);
+        o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + 1);
+      } catch (e) {}
+      setTimeout(end, 1600);
+    };
+    v.onerror = fallback;
+    v.onended = end;
+    sc.onclick = end;
+    sc.appendChild(v);
+    const p = v.play();
+    if (p && p.catch) p.catch(fallback);
+  }
+
+  function reveal() {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('after').classList.add('on');
+    const cards = store.get('tarot3', null) || [pick(PAST), pick(PRESENT), pick(FUTURE)];
+    store.set('tarot3', cards);
+    [...deck.children].forEach((c, k) => {
+      const [num, ic, name] = cards[k];
+      c.className = 'tcard face'; c.onclick = null;
+      c.innerHTML = `<b>${num}</b><span class="ic">${ic}</span><b>${name.toUpperCase()}</b>`;
+    });
+    document.getElementById('labels').style.display = 'grid';
+    const r = document.getElementById('reading');
+    r.innerHTML = cards.map((c, k) => `<p class="hand"><b>${LABELS[k]} · ${c[0]} ${c[2]}</b>${c[3]}</p>`).join('') +
+      `<a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 14: I was NOT ready for that 😭 My reading: ' + cards.map(c => c[2]).join(', '))}">Tell Sofi how scared you were</a>`;
+    r.classList.add('on');
+  }
+
+  if (scared) reveal();
+</script>
 </body>
 </html>

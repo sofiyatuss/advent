@@ -6,16 +6,38 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 19</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #EFE4D2; padding: 16px 12px; background-image: radial-gradient(rgba(58,42,32,.08) 1px, transparent 1px); background-size: 14px 14px; }
+  .intro { text-align: center; font-size: 24px; margin: 0 0 4px; }
+  .sub { text-align: center; font-size: 15px; opacity: .7; margin: 0 0 18px; }
+  .pol {
+    background: #fff; border: 3px solid var(--ink); padding: 8px 8px 6px; margin: 0 auto 22px; width: 88%;
+    box-shadow: 0 4px 0 rgba(58,42,32,.35); position: relative;
+  }
+  .pol::before {
+    content: ''; position: absolute; top: -11px; left: 50%; width: 70px; height: 20px; transform: translateX(-50%) rotate(-2deg);
+    background: rgba(233,184,74,.75); border: 2px solid rgba(58,42,32,.3);
+  }
+  .pol img, .pol video { display: block; width: 100%; height: auto; background: #111; }
+  .pol p { margin: 8px 2px 2px; font-size: 24px; text-align: center; line-height: 1.2; }
+  .pol .vid-tag { position: absolute; top: 14px; left: 14px; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; padding: 2px 8px; font-family: 'Pixelify Sans', monospace; }
+  .end { text-align: center; margin-top: 6px; }
+  .end .plop-md { width: 110px; margin: 0 auto; }
+  .end p { font-size: 22px; }
+</style>
 </head>
 <body data-day="19">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 19: Remember when… — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Remember when…</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 19: Remember when… ===== -->
+    <p class="intro hand">Remember when…</p>
+    <p class="sub">a very small selection of our camera roll</p>
+    <div id="album"></div>
+    <div class="end">
+      <div class="plop-md" id="plop-end"></div>
+      <p class="hand">more memories loading in 2027…</p>
     </div>
     <!-- ===== end of day 19 content ===== -->
   </main>
@@ -24,6 +46,47 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the album, in order: src + caption (videos end in .mp4) ----
+  const ALBUM = [
+    ['mem-01.jpg', 'pride parade #wifedat'],
+    ['mem-02.jpg', 'what is even up with you?'],
+    ['mem-vid1.mp4', 'NEEEEDDD'],
+    ['mem-03.jpg', 'so good omg. more trips needed'],
+    ['mem-04.jpg', 'tufffffff'],
+    ['mem-05.jpg', 'so pretty'],
+    ['mem-06.jpg', 'viva españa'],
+    ['mem-07.jpg', 'cuties'],
+    ['mem-vid2.mp4', 'Yums'],
+    ['mem-08.jpg', 'what a day'],
+    ['mem-09.jpg', 'US??'],
+    ['mem-10.jpg', 'butterfly effect'],
+    ['mem-11.jpg', 'holy mog'],
+    ['mem-12.jpg', 'BUDAPEST'],
+    ['mem-vid3.mp4', 'Like em younger'],
+    ['mem-13.jpg', 'bday!!!!'],
+    ['mem-14.jpg', 'sleepover prob'],
+    ['mem-15.jpg', 'where we going?'],
+    ['mem-16.jpg', 'lice?'],
+    ['mem-17.jpg', 'best thing ever']
+  ];
+
+  const album = document.getElementById('album');
+  ALBUM.forEach(([src, cap], i) => {
+    const d = document.createElement('div');
+    d.className = 'pol';
+    d.style.transform = `rotate(${((i * 37) % 7) - 3}deg)`;
+    const media = src.endsWith('.mp4')
+      ? `<span class="vid-tag">▶ VIDEO</span><video src="${src}" controls playsinline preload="metadata"></video>`
+      : `<img src="${src}" alt="" loading="lazy">`;
+    d.innerHTML = `${media}<p class="hand">${cap}</p>`;
+    album.appendChild(d);
+  });
+  // only one video plays at a time
+  album.addEventListener('play', e => album.querySelectorAll('video').forEach(v => { if (v !== e.target) v.pause(); }), true);
+  mountPlop(document.getElementById('plop-end'), { outfit: '#A0522D' });
+</script>
 </body>
 </html>

@@ -67,14 +67,14 @@
 
   // ---- clues: answer (& and spaces are fine), gold = which letter position (0 = first) is part of the secret word ----
   const CLUES = [
-    { q: "Sofiya's fav social media", a: 'LINKEDIN' },
+    { q: "Sofiya's fav social media", a: 'LINKEDIN', hint: '500+' },
     { q: 'Worst fear (not pigeons)', a: 'EMPLOYMENT', gold: 2, hint: 'sprout' },
     { q: 'Secure communication platform', a: 'WECHAT' },
     { q: 'My moon sign', a: 'LIBRA', gold: 0, hint: 'lock in' },
     { q: 'Love of your life', a: 'SAMSAM', hint: 'not the devil, not even Paul' },
     { q: 'Worst airport ever', a: 'ROME', gold: 1 },
     { q: 'Coco goat', a: 'GANYU' },
-    { q: 'Your fav classic book', a: 'CRIME & PREJUDICE', gold: 6, hint: 'includes an &' }
+    { q: 'Dostoyevsky and Jane Austen', a: 'CRIME & PREJUDICE', gold: 6, hint: 'includes an &' }
   ];
 
   const saved = store.get('puzzle', {});

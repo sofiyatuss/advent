@@ -6,17 +6,50 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 12</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 0; overflow: hidden; background: #ECE5DD; }
+  .wa-head { display: flex; align-items: center; gap: 10px; background: #075E54; color: #fff; padding: 10px 12px; border-bottom: 4px solid var(--ink); }
+  .wa-head .av { width: 42px; height: 42px; border-radius: 50%; background: #F3E6CF; overflow: hidden; flex: none; border: 2px solid #fff; }
+  .wa-head .av svg { width: 100%; height: 100%; }
+  .wa-head b { display: block; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; }
+  .wa-head span { font-family: -apple-system, Arial, sans-serif; font-size: 12px; opacity: .85; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat { min-height: 420px; padding: 12px 10px 6px; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+  .sys { text-align: center; margin: 8px 0; }
+  .sys span { display: inline-block; background: #E1F2FB; color: #3b4a54; font-size: 12.5px; padding: 4px 10px; border-radius: 8px; box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+  .msg { max-width: 80%; margin: 3px 0; padding: 6px 9px 4px; border-radius: 10px; font-size: 16px; line-height: 1.3; position: relative; box-shadow: 0 1px 0 rgba(0,0,0,.1); word-wrap: break-word; animation: pop .18s ease-out; }
+  .msg.in { background: #fff; border-top-left-radius: 2px; }
+  .msg.out { background: #DCF8C6; margin-left: auto; border-top-right-radius: 2px; }
+  .msg .who { display: block; font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+  .msg .t { display: block; text-align: right; font-size: 11px; color: #667781; margin-top: 1px; }
+  .msg.out .t::after { content: ' ✓✓'; color: #53BDEB; }
+  .typing { font-size: 13px; color: #667781; font-style: italic; margin: 6px 4px; min-height: 18px; }
+  .choices { padding: 10px; background: #F0F0F0; border-top: 3px solid var(--ink); display: none; }
+  .choices.on { display: block; }
+  .choices p { margin: 0 0 6px; font-family: 'Pixelify Sans', monospace; font-size: 14px; opacity: .7; text-align: center; }
+  .choice { display: block; width: 100%; text-align: left; font-family: -apple-system, Arial, sans-serif; font-size: 16px; background: #DCF8C6; color: #111; border: 3px solid var(--ink); padding: 10px 12px; margin-bottom: 8px; cursor: pointer; box-shadow: 0 3px 0 var(--ink); }
+  .choice:active { transform: translateY(3px); box-shadow: none; }
+  .ending { display: none; padding: 16px 12px; background: var(--wall); border-top: 4px solid var(--ink); text-align: center; }
+  .ending.on { display: block; }
+  .ending small { font-family: 'Pixelify Sans', monospace; letter-spacing: 1px; opacity: .65; }
+  .ending h2 { font-size: 24px; margin: 4px 0 6px; }
+  .ending p { font-size: 20px; margin: 0 0 12px; }
+  .ending .found { font-family: 'Pixelify Sans', monospace; font-size: 15px; margin: 0 0 12px; }
+  .skip { text-align: center; font-size: 13px; color: #667781; padding: 0 0 8px; font-family: -apple-system, Arial, sans-serif; }
+  @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
 </head>
 <body data-day="12">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 12: Top 5 unhinged moments — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Top 5 unhinged moments</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 12: The group chat ===== -->
+    <div class="wa-head"><div class="av" id="gav"></div><div style="min-width:0"><b>plop's emergency meeting 🐦</b><span id="members">Plop, Sofi, Ama, Sam, Milan, You</span></div></div>
+    <div class="chat" id="chat"></div>
+    <div class="typing" id="typing"></div>
+    <div class="skip" id="skip">tap the chat to speed up</div>
+    <div class="choices" id="choices"></div>
+    <div class="ending" id="ending"></div>
     <!-- ===== end of day 12 content ===== -->
   </main>
 
@@ -24,6 +57,208 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+  document.getElementById('gav').innerHTML = plopSVG({ outfit: '#075E54' });
+
+  const COLORS = { Plop: '#7E57C2', Sofi: '#D81B60', Ama: '#E65100', Sam: '#00897B', Milan: '#1E88E5', 'The Devil': '#C62828' };
+
+  // ---- the script. [who, text]; who = 'sys' for grey notices, 'me' for Del's own messages ----
+  const S = {
+    start: { lines: [
+      ['sys', 'Plop created the group "plop\'s emergency meeting 🐦"'],
+      ['sys', 'Plop added you'],
+      ['Plop', 'EMERGENCY MEETING'],
+      ['Plop', 'coo'],
+      ['Ama', 'WHAT HAPPENED'],
+      ['Plop', 'sources say someone was seen with two different blondes 👀'],
+      ['Sam', 'was one of them asian'],
+      ['Sofi', 'sam.'],
+      ['Milan', 'bro i know a guy who saw it'],
+      ['Milan', 'dont ask how i know'],
+      ['Ama', 'DELIYA???']
+    ], choices: [
+      ['it wasn\'t me', 'deny', 0],
+      ['it was ONE blonde. twice.', 'one', 1],
+      ['🚪 leave the group', 'leave', 1]
+    ] },
+    deny: { lines: [
+      ['me', 'it wasn\'t me'],
+      ['Sofi', 'girl his 2 friends literally saw you'],
+      ['Ama', 'THE RECEIPTS 😭'],
+      ['Plop', 'coo (that means liar)']
+    ], next: 'devil' },
+    one: { lines: [
+      ['me', 'it was ONE blonde. twice.'],
+      ['Ama', 'ONE BLONDE TWICE 💀💀'],
+      ['Sofi', 'ain\'t beating those allegations'],
+      ['Milan', 'respect']
+    ], next: 'devil' },
+    leave: { lines: [
+      ['sys', 'You left'],
+      ['Plop', '…'],
+      ['sys', 'Plop added you'],
+      ['Plop', 'nobody leaves the emergency meeting.']
+    ], next: 'devil' },
+    devil: { lines: [
+      ['sys', 'Sam added The Devil'],
+      ['Sofi', 'SAM WHY'],
+      ['Sam', 'i thought it was a different guy'],
+      ['Sam', 'his pfp looked korean'],
+      ['The Devil', 'hey'],
+      ['The Devil', 'right when i moved on…'],
+      ['Milan', 'bro 😭']
+    ], choices: [
+      ['🚫 block him', 'block', 0],
+      ['"deliya, move back in" 🏠', 'movein', 1],
+      ['made a hate account btw. follow @devilwatch', 'hate', 1]
+    ] },
+    block: { lines: [
+      ['me', 'sofi remove him'],
+      ['sys', 'Sofi removed The Devil'],
+      ['Sofi', 'handled.'],
+      ['Ama', 'QUEEN'],
+      ['Plop', 'coo coo (good riddance)']
+    ], next: 'snap' },
+    movein: { flag: 'devil', lines: [
+      ['me', 'deliya, move back in'],
+      ['Sofi', 'absolutely not'],
+      ['The Devil', '😏'],
+      ['The Devil', 'relax i was joking'],
+      ['Sofi', 'he was not joking'],
+      ['Plop', 'plop is calling an intervention']
+    ], next: 'snap' },
+    hate: { lines: [
+      ['me', 'made a hate account btw. follow @devilwatch'],
+      ['Ama', 'FOLLOWING'],
+      ['Sam', 'following'],
+      ['Milan', 'i made 3 more accounts for you. untraceable. dont ask'],
+      ['The Devil', 'who tf is devilwatch'],
+      ['sys', 'Sofi removed The Devil']
+    ], next: 'snap' },
+    snap: { lines: [
+      ['Milan', 'why is ur snap map at passe rn'],
+      ['Ama', 'it\'s a thursday'],
+      ['Sam', 'are there asians there?'],
+      ['Sofi', 'deliya.'],
+      ['Plop', 'plop is watching. plop is always watching.']
+    ], choices: [
+      ['im just you know, minding my business', 'mind', 0],
+      ['it was sofiyas idea', 'blame', 1],
+      ['liquidate the assets. i\'m moving to china', 'china', 1]
+    ] },
+    mind: { flag: 'mind', lines: [
+      ['me', 'im just you know, minding my business'],
+      ['Ama', 'minding WHOSE business'],
+      ['Sofi', 'aight buddy']
+    ], end: true },
+    blame: { flag: 'blame', lines: [
+      ['me', 'it was sofiyas idea'],
+      ['Sofi', 'WHAT'],
+      ['Milan', 'can i come?']
+    ], end: true },
+    china: { flag: 'china', lines: [
+      ['me', 'liquidate the assets. i\'m moving to china'],
+      ['Sam', 'FINALLY SOMEONE GETS IT'],
+      ['Milan', 'i got a contact in shanghai. he owes me'],
+      ['Sofi', 'the supplier is waiting']
+    ], end: true }
+  };
+
+  const ENDINGS = {
+    secret: { title: 'Plop\'s Successor', text: 'Peak chaos at every turn. Plop is honoured to retire.', lines: [
+      ['Plop', 'plop has seen enough.'], ['Plop', 'plop is retiring. a new admin has been chosen.'], ['sys', 'Plop made you an admin'], ['sys', 'Plop left'], ['Ama', 'ALL HAIL']] },
+    devil: { title: 'Back with The Devil', text: 'You chose violence (against yourself). Plop could not watch.', lines: [
+      ['sys', 'Sam added The Devil'], ['The Devil', 'so… we\'re back?'], ['Plop', 'plop cannot watch this'], ['sys', 'Plop left'], ['Sofi', 'i\'m not coming to the wedding']] },
+    china: { title: 'Moved to China', text: 'The supplier has been waiting long enough.', lines: [
+      ['Sam', 'we leave tomorrow'], ['Sofi', 'send postcards'], ['sys', 'Sam changed the group name to "shanghai 2027 🇨🇳"']] },
+    blame: { title: 'Exiled', text: 'You threw Sofi under the bus. The bus came back.', lines: [
+      ['sys', 'Sofi removed you'], ['Plop', 'meeting adjourned. coo.']] },
+    mind: { title: 'Minding Your Business', text: 'Plausible deniability achieved. Nobody believes you.', lines: [
+      ['Plop', 'plop will allow it. this time.'], ['Plop', 'meeting adjourned. coo.']] }
+  };
+
+  const chat = document.getElementById('chat'), typing = document.getElementById('typing'), choicesEl = document.getElementById('choices');
+  let fast = false, chaos = 0, flags = new Set(), clock = 21 * 60 + 47;
+  chat.addEventListener('click', () => fast = true);
+
+  const sleep = ms => new Promise(r => setTimeout(r, fast ? Math.min(ms, 60) : ms));
+  const time = () => { clock++; return `${String(Math.floor(clock / 60) % 24).padStart(2, '0')}:${String(clock % 60).padStart(2, '0')}`; };
+
+  function bubble(who, text) {
+    const el = document.createElement('div');
+    if (who === 'sys') { el.className = 'sys'; el.innerHTML = `<span>${text}</span>`; }
+    else if (who === 'me') { el.className = 'msg out'; el.innerHTML = `${text}<span class="t">${time()}</span>`; }
+    else { el.className = 'msg in'; el.innerHTML = `<span class="who" style="color:${COLORS[who] || '#333'}">${who}</span>${text}<span class="t">${time()}</span>`; }
+    chat.appendChild(el);
+    el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  async function play(lines) {
+    for (const [who, text] of lines) {
+      if (who !== 'sys' && who !== 'me') {
+        typing.textContent = `${who} is typing…`;
+        await sleep(500 + Math.min(1400, text.length * 28));
+        typing.textContent = '';
+      } else await sleep(who === 'me' ? 250 : 600);
+      bubble(who, text);
+      await sleep(250);
+    }
+  }
+
+  async function go(id) {
+    const node = S[id];
+    if (node.flag) flags.add(node.flag);
+    await play(node.lines);
+    if (node.choices) return ask(node.choices);
+    if (node.next) return go(node.next);
+    if (node.end) return finish();
+  }
+
+  function ask(list) {
+    fast = false;
+    choicesEl.innerHTML = '<p>YOUR REPLY</p>' + list.map(([t, to, c], k) => `<button class="choice" data-k="${k}">${t}</button>`).join('');
+    choicesEl.classList.add('on');
+    choicesEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    choicesEl.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+      const [, to, c] = list[Number(b.dataset.k)];
+      chaos += c;
+      choicesEl.classList.remove('on');
+      go(to);
+    });
+  }
+
+  async function finish() {
+    const key = (chaos >= 3 && !flags.has('devil')) ? 'secret'
+      : flags.has('devil') ? 'devil' : flags.has('china') ? 'china' : flags.has('blame') ? 'blame' : 'mind';
+    const e = ENDINGS[key];
+    await play(e.lines);
+    const got = new Set(store.get('gc-endings', [])); got.add(key); store.set('gc-endings', [...got]);
+    const total = Object.keys(ENDINGS).length;
+    const n = Object.keys(ENDINGS).indexOf(key) + 1;
+    const end = document.getElementById('ending');
+    document.getElementById('skip').style.display = 'none';
+    end.innerHTML = `<small>ENDING ${n} / ${total}</small><h2>${e.title}</h2><p class="hand">${e.text}</p>
+      <p class="found">Endings found: ${got.size} / ${total}${got.size === total ? ' 🏆' : ''}</p>
+      <button class="btn" id="again">Play again for another ending</button>
+      <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 12: I got the "' + e.title + '" ending in the group chat 💀 (' + got.size + '/' + total + ' found)')}">Tell Sofi my ending</a>`;
+    end.classList.add('on');
+    end.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('again').onclick = restart;
+  }
+
+  function restart() {
+    chat.innerHTML = ''; chaos = 0; flags = new Set(); clock = 21 * 60 + 47; fast = false;
+    document.getElementById('ending').classList.remove('on');
+    document.getElementById('skip').style.display = '';
+    document.getElementById('content').scrollIntoView({ behavior: 'smooth' });
+    go('start');
+  }
+
+  // start when the chat scrolls into view (so she doesn't miss the opening)
+  let started = false;
+  const io = new IntersectionObserver(es => { if (!started && es[0].isIntersecting) { started = true; go('start'); } }, { threshold: .2 });
+  io.observe(chat);
+</script>
 </body>
 </html>
