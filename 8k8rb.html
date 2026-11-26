@@ -6,17 +6,55 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 8</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 14px 12px; }
+  .intro { text-align: center; margin: 0 0 14px; }
+  .clue { background: var(--cream); border: 3px solid var(--ink); padding: 10px; margin-bottom: 12px; }
+  .clue.solved { background: #E4F1DF; }
+  .clue-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .clue-top p { margin: 0; font-size: 17px; }
+  .clue-top p b { font-family: 'Pixelify Sans', monospace; margin-right: 4px; }
+  .hint-btn { flex: none; font-family: 'Pixelify Sans', monospace; font-size: 13px; background: var(--gold); border: 2px solid var(--ink); padding: 2px 8px; cursor: pointer; }
+  .hint { display: none; font-size: 18px; color: var(--red); margin: -2px 0 8px; }
+  .hint.on { display: block; }
+  .boxes { display: flex; flex-wrap: wrap; gap: 10px; }
+  .word { display: flex; gap: 3px; }
+  .box {
+    width: 26px; height: 32px; text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 18px; text-transform: uppercase;
+    border: 3px solid var(--ink); border-radius: 0; background: #fff; color: var(--ink); padding: 0; -webkit-appearance: none;
+  }
+  .box.gold { background: var(--gold); }
+  .box.fixed { background: #ddd; }
+  .box.ok { background: #6AAA64; color: #fff; }
+  .box.gold.ok { background: #D4A017; color: #fff; outline: 3px solid var(--ink); }
+  .box.bad { animation: bad .35s steps(4); background: #F3C4BC; }
+  .secret { text-align: center; margin: 18px 0 10px; }
+  .secret small { display: block; font-size: 15px; opacity: .7; margin-bottom: 6px; }
+  .secret-row { display: flex; justify-content: center; gap: 6px; }
+  .secret-row span {
+    width: 46px; height: 52px; display: flex; align-items: center; justify-content: center; border: 4px solid var(--ink);
+    background: var(--gold); font-family: 'Pixelify Sans', monospace; font-size: 30px; font-weight: 600;
+  }
+  .err { text-align: center; color: var(--red); min-height: 22px; font-size: 16px; }
+  .done { display: none; text-align: center; }
+  .done.on { display: block; }
+  .done .plop-md { width: 130px; margin: 0 auto; }
+  .done p { font-size: 20px; }
+  @keyframes bad { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+</style>
 </head>
 <body data-day="8">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 8: Puzzle day — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Puzzle day</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 8: Puzzle ===== -->
+    <p class="intro">Solve every clue. The <b style="background:var(--gold);padding:0 4px">gold boxes</b> spell a secret word.</p>
+    <div id="clues"></div>
+    <div class="secret"><small>SECRET WORD</small><div class="secret-row" id="secret"></div></div>
+    <p class="err" id="err"></p>
+    <button class="btn btn-reply" id="check">Check answers</button>
+    <div class="done" id="done"></div>
     <!-- ===== end of day 8 content ===== -->
   </main>
 
@@ -24,6 +62,104 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- clues: answer (& and spaces are fine), gold = which letter position (0 = first) is part of the secret word ----
+  const CLUES = [
+    { q: "Sofiya's fav social media", a: 'LINKEDIN' },
+    { q: 'Worst fear (not pigeons)', a: 'EMPLOYMENT', gold: 2, hint: 'sprout' },
+    { q: 'Secure communication platform', a: 'WECHAT' },
+    { q: 'My moon sign', a: 'LIBRA', gold: 0, hint: 'lock in' },
+    { q: 'Love of your life', a: 'SAMSAM', hint: 'not the devil, not even Paul' },
+    { q: 'Worst airport ever', a: 'ROME', gold: 1 },
+    { q: 'Coco goat', a: 'GANYU' },
+    { q: 'Your fav classic book', a: 'CRIME & PREJUDICE', gold: 6, hint: 'includes an &' }
+  ];
+
+  const saved = store.get('puzzle', {});
+  const box = document.getElementById('clues');
+  const inputs = [];   // all editable boxes in order, for auto-advance
+  const rows = [];
+
+  CLUES.forEach((c, ci) => {
+    const el = document.createElement('div');
+    el.className = 'clue';
+    el.innerHTML = `<div class="clue-top"><p><b>${ci + 1}.</b>${c.q}</p>${c.hint ? '<button class="hint-btn">hint</button>' : ''}</div>
+      ${c.hint ? `<p class="hint hand">${c.hint}</p>` : ''}<div class="boxes"></div>`;
+    const wrap = el.querySelector('.boxes');
+    const cells = [];
+    let letterIdx = 0;
+    c.a.split(' ').forEach(w => {
+      const word = document.createElement('div'); word.className = 'word';
+      [...w].forEach(ch => {
+        const inp = document.createElement('input');
+        inp.className = 'box';
+        if (ch === '&') { inp.value = '&'; inp.readOnly = true; inp.classList.add('fixed'); inp.tabIndex = -1; }
+        else {
+          inp.maxLength = 1; inp.autocapitalize = 'characters'; inp.autocomplete = 'off'; inp.spellcheck = false;
+          if (c.gold === letterIdx) inp.classList.add('gold');
+          inp.dataset.want = ch;
+          inputs.push(inp); cells.push(inp);
+        }
+        letterIdx++;
+        word.appendChild(inp);
+      });
+      wrap.appendChild(word);
+    });
+    if (c.hint) el.querySelector('.hint-btn').onclick = () => el.querySelector('.hint').classList.toggle('on');
+    rows.push({ el, cells, c });
+    box.appendChild(el);
+  });
+
+  // restore + typing behaviour
+  inputs.forEach((inp, k) => {
+    if (saved[k]) inp.value = saved[k];
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.slice(-1).toUpperCase();
+      inp.classList.remove('bad', 'ok');
+      document.getElementById('err').textContent = '';
+      saved[k] = inp.value; store.set('puzzle', saved);
+      if (inp.value && inputs[k + 1]) inputs[k + 1].focus();
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Backspace' && !inp.value && inputs[k - 1]) inputs[k - 1].focus(); });
+  });
+
+  const secret = document.getElementById('secret');
+  const golds = rows.filter(r => r.c.gold !== undefined);
+  secret.innerHTML = golds.map(() => '<span>?</span>').join('');
+
+  function check(silent) {
+    let allOk = true, anyEmpty = false;
+    rows.forEach(r => {
+      let rowOk = true;
+      r.cells.forEach(inp => {
+        if (!inp.value) { anyEmpty = true; rowOk = false; return; }
+        const ok = inp.value === inp.dataset.want;
+        if (!ok) { rowOk = false; if (!silent) { inp.classList.remove('bad'); void inp.offsetWidth; inp.classList.add('bad'); } }
+      });
+      if (rowOk) { r.cells.forEach(i => { i.classList.add('ok'); i.readOnly = true; }); r.el.classList.add('solved'); }
+      else allOk = false;
+    });
+    golds.forEach((r, k) => {
+      const g = r.cells.find(i => i.classList.contains('gold'));
+      secret.children[k].textContent = r.el.classList.contains('solved') ? g.value : '?';
+    });
+    if (!silent && !allOk) document.getElementById('err').textContent = anyEmpty ? 'Some boxes are still empty' : 'Not quite. Red boxes are wrong.';
+    if (allOk) win();
+  }
+
+  function win() {
+    document.getElementById('check').classList.add('hidden');
+    const d = document.getElementById('done');
+    d.innerHTML = `<div class="plop-md" id="plop-done"></div><p class="hand">You found him. It was me all along.<br>— Plop</p>
+      <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 8: I solved the puzzle! The secret word was PLOP 🐦')}">Tell Sofi I solved it</a>`;
+    d.classList.add('on');
+    mountPlop(document.getElementById('plop-done'), { outfit: '#6E8B3D' });
+  }
+
+  document.getElementById('check').onclick = () => check(false);
+  check(true);
+</script>
 </body>
 </html>

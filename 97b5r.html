@@ -6,17 +6,57 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 10</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 14px 12px; }
+  .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .top b { font-family: 'Pixelify Sans', monospace; font-size: 20px; }
+  .prog { height: 12px; border: 3px solid var(--ink); background: var(--cream); margin-bottom: 14px; }
+  .prog i { display: block; height: 100%; background: var(--pine); transition: width .3s; }
+  .kind { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 15px; letter-spacing: 1px; opacity: .65; margin: 0 0 8px; }
+
+  /* phone-style chat */
+  .phone { background: #fff; border: 4px solid var(--ink); padding: 0 0 14px; }
+  .chat-head { display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; border-bottom: 1px solid #e5e5ea; background: #f7f7f9; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: #b8b8c2; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
+  .chat-head span { font-size: 12px; color: #555; margin-top: 3px; }
+  .stamp-t { text-align: center; font-size: 11px; color: #8e8e93; margin: 12px 0 6px; }
+  .bubble {
+    max-width: 78%; margin: 0 14px; padding: 9px 14px; border-radius: 20px; border-bottom-left-radius: 6px;
+    background: #e9e9eb; color: #111; font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; font-size: 17px; line-height: 1.3;
+    display: inline-block;
+  }
+
+  /* repost */
+  .repost { background: #111; border: 4px solid var(--ink); position: relative; }
+  .repost img, .repost video { display: block; width: 100%; max-height: 62vh; object-fit: contain; background: #111; }
+  .repost .tag { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 13px; padding: 3px 8px; border-radius: 10px; font-family: -apple-system, Arial, sans-serif; }
+
+  .q { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 20px; margin: 14px 0 10px; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .choice {
+    font-family: 'Pixelify Sans', monospace; font-size: 20px; padding: 14px 6px; background: var(--cream); color: var(--ink);
+    border: 4px solid var(--ink); box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+  }
+  .choice:active { transform: translateY(4px); box-shadow: none; }
+  .choice.right { background: #6AAA64; color: #fff; }
+  .choice.wrong { background: var(--red); color: #fff; }
+  .choice:disabled { cursor: default; }
+  .reveal { display: none; gap: 10px; align-items: center; margin-top: 14px; background: var(--cream); border: 3px solid var(--ink); padding: 8px 10px; }
+  .reveal.on { display: flex; }
+  .reveal .plop-xs { width: 52px; }
+  .reveal b { font-family: 'Pixelify Sans', monospace; display: block; font-size: 18px; }
+  .final { text-align: center; }
+  .final .big { font-family: 'Pixelify Sans', monospace; font-size: 54px; color: var(--red); margin: 6px 0 0; }
+  .final .plop-md { width: 130px; margin: 0 auto; }
+</style>
 </head>
 <body data-day="10">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 10: Guess who texted this — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Guess who texted this</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 10: Guess who texted / reposted this ===== -->
+    <div id="stage"></div>
     <!-- ===== end of day 10 content ===== -->
   </main>
 
@@ -24,6 +64,98 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the rounds: type text / img / video, who = right answer, say = comment after the reveal ----
+  const PEOPLE = ['Del', 'Sofi', 'Sam', 'Plop'];
+  const ROUNDS = [
+    { type: 'text',  text: 'Bro I also have lore abt the waste of space guy', who: 'Del',  say: 'Of course it was you. The lore never ends.' },
+    { type: 'img',   src: 'gw-img1.jpg', who: 'Sofi', say: 'Sofi. Rage bait queen.' },
+    { type: 'text',  text: 'does he know i swing both ways', who: 'Sofi', say: 'Sofi. Classic Libra moon behaviour.' },
+    { type: 'img',   src: 'gw-img2.jpg', who: 'Sam',  say: "Sam. Could've been you tho (asian fetish fr)" },
+    { type: 'text',  text: 'Im going to a basement on thursday', who: 'Del', say: 'Del. What happens in the basement stays in the basement.' },
+    { type: 'video', src: 'gw-vid1.mp4', poster: 'gw-vid1.jpg', who: 'Sofi', say: 'Sofi reposted this. No further comments.' },
+    { type: 'text',  text: 'this is how my gun sounds like', who: 'Del', say: 'Del. We all heard it. Pew pew.' },
+    { type: 'img',   src: 'gw-img3.jpg', who: 'Del',  say: 'Del. Liquidating assets since 2008.' },
+    { type: 'text',  text: "and why doesn't he think you could be gay for me", who: 'Sofi', say: 'Sofi. Honestly, a valid question.' },
+    { type: 'video', src: 'gw-vid3.mp4', poster: 'gw-vid3.jpg', who: 'Del', say: 'Del, obviously.' },
+    { type: 'text',  text: "Let's start a Sophie cult", who: 'Del', say: 'Del founded the cult. Sofi accepts.' },
+    { type: 'video', src: 'gw-vid2.mp4', poster: 'gw-vid2.jpg', who: 'Sofi', say: 'Sofi. Of course.' },
+    { type: 'text',  text: 'now it looks like i paid for bots to comment', who: 'Sofi', say: "Sofi. The bots were real (they weren't)." },
+    { type: 'text',  text: 'I feel like making a hate account', who: 'Del', say: 'Del. Plop will not be following that account.' },
+    { type: 'video', src: 'gw-vid4.mp4', poster: 'gw-vid4.jpg', who: 'Del', say: 'Del. 74 seconds of pure Del energy.' },
+    { type: 'text',  text: "thats insane. divorce when?", who: 'Sofi', say: 'Sofi. The divorce papers are ready.' }
+  ];
+  const WRONG = ['Nope!', 'Wrong!', 'Not even close.', 'Plop is shaking his head.'];
+  const PLOP_PICK = 'Plop cannot hold a phone. He has wings.';
+  const TIMES = ['Today 23:47', 'Yesterday 02:13', 'Mon 18:02', 'Today 03:31', 'Sun 14:20', 'Fri 01:58', 'Today 16:44', 'Wed 00:09'];
+
+  let i = 0, right = 0;
+  const stage = document.getElementById('stage');
+
+  function render() {
+    if (i >= ROUNDS.length) return finish();
+    const r = ROUNDS[i];
+    let media = '';
+    if (r.type === 'text') {
+      media = `<p class="kind">WHO TEXTED THIS?</p>
+        <div class="phone">
+          <div class="chat-head"><div class="avatar">?</div><span>???</span></div>
+          <div class="stamp-t">${TIMES[i % TIMES.length]}</div>
+          <div class="bubble">${r.text}</div>
+        </div>`;
+    } else if (r.type === 'img') {
+      media = `<p class="kind">WHO REPOSTED THIS?</p><div class="repost"><span class="tag">🔁 reposted</span><img src="${r.src}" alt=""></div>`;
+    } else {
+      media = `<p class="kind">WHO REPOSTED THIS?</p><div class="repost"><span class="tag">🔁 reposted</span>
+        <video src="${r.src}" poster="${r.poster}" controls playsinline preload="metadata"></video></div>`;
+    }
+    stage.innerHTML = `
+      <div class="top"><span>Round ${i + 1} / ${ROUNDS.length}</span><b>✔ ${right}</b></div>
+      <div class="prog"><i style="width:${(i / ROUNDS.length) * 100}%"></i></div>
+      ${media}
+      <p class="q">Who was it?</p>
+      <div class="choices">${PEOPLE.map(p => `<button class="choice" data-p="${p}">${p}</button>`).join('')}</div>
+      <div class="reveal" id="reveal"></div>
+      <button class="btn btn-reply hidden" id="next" style="margin-top:12px">${i < ROUNDS.length - 1 ? 'Next →' : 'See my score'}</button>`;
+
+    stage.querySelectorAll('.choice').forEach(b => b.onclick = () => {
+      const ok = b.dataset.p === r.who;
+      if (ok) right++;
+      stage.querySelectorAll('.choice').forEach(c => {
+        c.disabled = true;
+        if (c.dataset.p === r.who) c.classList.add('right');
+      });
+      if (!ok) b.classList.add('wrong');
+      const head = ok ? 'Correct!' : (b.dataset.p === 'Plop' ? PLOP_PICK : WRONG[Math.floor(Math.random() * WRONG.length)]);
+      const rev = document.getElementById('reveal');
+      rev.innerHTML = `<div class="plop-xs">${plopSVG({ outfit: '#4A4A58' })}</div><div><b>${head}</b><span class="hand" style="font-size:19px">${r.say}</span></div>`;
+      rev.classList.add('on');
+      stage.querySelector('.top b').textContent = '✔ ' + right;
+      document.getElementById('next').classList.remove('hidden');
+      const v = stage.querySelector('video'); if (v) v.pause();
+    });
+    document.getElementById('next').onclick = () => { i++; render(); document.getElementById('content').scrollIntoView({ behavior: 'smooth' }); };
+  }
+
+  function finish() {
+    const n = ROUNDS.length;
+    const rank = right === n ? 'Detective Plop 🕵️ Perfect score!'
+      : right >= n * .75 ? 'Certified group chat expert.'
+      : right >= n * .5 ? 'Not bad. Plop is mildly impressed.'
+      : 'Plop is disappointed. Do you even read the chat?';
+    stage.innerHTML = `<div class="final">
+        <div class="plop-md" id="plop-final"></div>
+        <div class="big">${right} / ${n}</div>
+        <p class="hand" style="font-size:22px">${rank}</p>
+        <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 10: I got ' + right + '/' + n + ' in Guess Who. ' + rank)}">Send my score to Sofi</a>
+        <button class="btn" onclick="location.reload()">Play again</button>
+      </div>`;
+    mountPlop(document.getElementById('plop-final'), { outfit: '#4A4A58' });
+  }
+
+  render();
+</script>
 </body>
 </html>

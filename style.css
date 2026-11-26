@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&family=Patrick+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&family=Nunito:wght@400;600;700;800&family=Patrick+Hand&display=swap');
 
 :root {
   --wall: #F3E6CF;
@@ -21,8 +21,8 @@ body {
   background-image:
     linear-gradient(var(--night) 0 0);
   color: var(--ink);
-  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
-  font-size: 20px;
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 17px;
   line-height: 1.4;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
@@ -53,7 +53,7 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 .hero .plop-lg { width: 190px; margin: 0 auto; animation: bob 1.2s steps(2) infinite; }
 .hero h1 { font-size: 34px; margin: 6px 0 0; letter-spacing: 1px; }
 .hero .for { margin: 0; font-size: 20px; color: var(--red); }
-.hero #sub { margin: 2px 0 0; font-family: 'Patrick Hand', cursive; font-size: 22px; }
+.hero #sub { margin: 2px 0 0; font-family: 'Nunito', sans-serif; font-size: 22px; }
 
 .roof {
   height: 18px; margin: 0 -16px 14px; background:
@@ -80,7 +80,7 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 .sticker.have { border: 2px solid var(--ink); background: var(--cream); padding: 2px; }
 .sticker svg { width: 100%; height: 100%; }
 .row-head { display: flex; justify-content: space-between; align-items: baseline; }
-.row-head span { font-family: 'Patrick Hand', cursive; font-size: 22px; }
+.row-head span { font-family: 'Nunito', sans-serif; font-size: 22px; }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat { background: var(--cream); border: 3px solid var(--ink); padding: 8px 10px; display: flex; flex-direction: column; }
@@ -131,3 +131,6 @@ h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .he
 .m-err { color: var(--red); min-height: 22px; font-size: 15px; margin-bottom: 6px; }
 .master-banner { position: relative; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--gold); color: var(--ink); border-bottom: var(--px) solid var(--ink); padding: 6px 12px; font-size: 15px; }
 .master-banner button { font-family: inherit; font-size: 14px; background: var(--cream); border: 3px solid var(--ink); padding: 3px 8px; cursor: pointer; }
+
+/* handwriting for letters and notes */
+.hand, .hand p { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; }

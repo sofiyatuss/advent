@@ -6,17 +6,41 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 13</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 14px 12px; }
+  .prog { display: flex; gap: 4px; margin-bottom: 14px; }
+  .prog i { flex: 1; height: 10px; background: var(--cream); border: 2px solid var(--ink); }
+  .prog i.done { background: #7FB7BE; }
+  .qn { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 15px; opacity: .65; margin: 0; }
+  .q { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 23px; margin: 4px 0 14px; line-height: 1.25; }
+  .ans {
+    display: block; width: 100%; text-align: left; font-family: inherit; font-size: 18px; color: var(--ink);
+    background: var(--cream); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); padding: 13px 14px; margin-bottom: 12px; cursor: pointer;
+  }
+  .ans:active { transform: translateY(4px); box-shadow: none; }
+  .intro { text-align: center; }
+  .intro .plop-md { width: 140px; margin: 0 auto; }
+  .res { text-align: center; }
+  .res small { display: block; font-family: 'Pixelify Sans', monospace; letter-spacing: 2px; opacity: .6; font-size: 14px; }
+  .res h2 { font-size: 28px; margin: 4px 0 6px; line-height: 1.15; }
+  .res .plop-lg { width: 180px; margin: 0 auto; animation: bob 1.2s steps(2) infinite; }
+  .res .desc { font-size: 22px; margin: 6px 0 16px; }
+  .bars { text-align: left; margin: 0 0 16px; }
+  .bar-row { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 15px; }
+  .bar-row .b { height: 14px; border: 2px solid var(--ink); background: #fff; margin-top: 3px; }
+  .bar-row .b i { display: block; height: 100%; }
+  .bar-row span:last-child { font-family: 'Pixelify Sans', monospace; text-align: right; }
+  .match { background: var(--cream); border: 3px solid var(--ink); padding: 10px; display: flex; gap: 10px; align-items: center; text-align: left; margin-bottom: 14px; }
+  .match .plop-xs { width: 56px; }
+</style>
 </head>
 <body data-day="13">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 13: Which pigeon are you? — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Which pigeon are you?</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 13: Which pigeon are you? ===== -->
+    <div id="stage"></div>
     <!-- ===== end of day 13 content ===== -->
   </main>
 
@@ -24,6 +48,94 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the pigeons ----
+  const P = {
+    AC: { name: 'Attentively Challenged Pigeon', short: 'Attentively Challenged', outfit: '#F28C28',
+          desc: "47 tabs open in your brain. You fly somewhere with full confidence and then forget why. Five new hobbies a week, zero finished, still the most fun pigeon in the flock." },
+    EU: { name: 'Emotionally Unavailable Pigeon', short: 'Emotionally Unavailable', outfit: '#4A4A58',
+          desc: "You leave everyone on read and coo only on your own terms. Mysterious, impossible to catch, and somehow everyone still wants your attention." },
+    DC: { name: 'Delusionally Confident Pigeon', short: 'Delusionally Confident', outfit: '#D4A017',
+          desc: "You strut into traffic like you own the road, and honestly, the cars move. Main character energy. Mirrors were invented for you." },
+    CO: { name: 'Chronically Online Pigeon', short: 'Chronically Online', outfit: '#8C6FA8',
+          desc: "You know every trend before it happens, repost at 3am and have lore on everyone in the flock, with screenshots as evidence." },
+    FI: { name: 'Financially Irresponsible Pigeon', short: 'Financially Irresponsible', outfit: '#C98A5A',
+          desc: "You spent all your breadcrumbs on one croissant. Worth it. Budgeting is a myth invented by sparrows." },
+    PU: { name: 'Professionally Unhinged Pigeon', short: 'Professionally Unhinged', outfit: '#9B2D5C',
+          desc: "Feral. Fearless. You have seen things. Other pigeons step aside when you land." },
+    RD: { name: 'Romantically Doomed Pigeon', short: 'Romantically Doomed', outfit: '#E05A7A',
+          desc: "You fall for every pigeon with a shiny neck and write 4-paragraph texts. A tragedy, but a beautiful one." }
+  };
+  // which pigeon Sofi is (change the code if you want: AC, EU, DC, CO, FI, PU, RD)
+  const SOFI_PIGEON = 'CO';
+
+  // ---- the questions: [answer, pigeon] ----
+  const QS = [
+    ['It\'s 2am. You are…', [['Reorganising your room instead of sleeping', 'AC'], ['Deep in someone\'s Instagram from 2017', 'CO'], ['Texting "u up?"', 'RD'], ['In a basement. Don\'t ask.', 'PU']]],
+    ['Someone texts "we need to talk". You…', [['Leave it on read for 3 days', 'EU'], ['"Is this about the thing or the OTHER thing"', 'PU'], ['Already drafting 4 paragraphs', 'RD'], ['Screenshot it to the group chat', 'CO']]],
+    ['You get €200. It goes on…', [['One really good croissant and a taxi', 'FI'], ['A gym membership you\'ll use once', 'DC'], ['You genuinely don\'t know', 'AC'], ['A gift for your situationship', 'RD']]],
+    ['How do you walk into a party?', [['Like it\'s my red carpet', 'DC'], ['Straight to the snacks, ignore everyone', 'EU'], ['Filming it for the story', 'CO'], ['Through the window', 'PU']]],
+    ['Pick a hobby', [['Starting 5 new hobbies a week', 'AC'], ['Online shopping at 3am', 'FI'], ['Manifesting', 'DC'], ['Reading my horoscope for signs about him', 'RD']]],
+    ['Your biggest red flag?', [['"I\'ll reply later" (never)', 'EU'], ['I\'m always right', 'DC'], ['My screen time', 'CO'], ['My bank account', 'FI']]],
+    ['Someone steals your fries. You…', [['Fight them', 'PU'], ['Didn\'t notice, was thinking about something else', 'AC'], ['Say nothing and cut them off forever', 'EU'], ['Buy more fries', 'FI']]],
+    ['Your love life is…', [['A tragedy in 4 acts', 'RD'], ['Optional', 'EU'], ['Everyone\'s in love with me, obviously', 'DC'], ['Content for my followers', 'CO']]],
+    ['Pick a pigeon activity', [['Strutting into traffic', 'DC'], ['Stealing a whole croissant', 'FI'], ['Attacking a tourist for no reason', 'PU'], ['Forgetting which roof you live on', 'AC']]]
+  ];
+
+  const stage = document.getElementById('stage');
+  let i = 0, picks = [];
+
+  function intro() {
+    stage.innerHTML = `<div class="intro">
+        <div class="plop-md" id="plop-intro"></div>
+        <h2>Which pigeon are you?</h2>
+        <p>9 questions. Answer honestly. Plop will know if you lie.</p>
+        <button class="btn btn-reply" id="go">Start the quiz</button>
+      </div>`;
+    mountPlop(document.getElementById('plop-intro'), { outfit: '#7FB7BE' });
+    document.getElementById('go').onclick = () => { i = 0; picks = []; question(); };
+  }
+
+  function question() {
+    if (i >= QS.length) return result();
+    const [q, answers] = QS[i];
+    stage.innerHTML = `
+      <div class="prog">${QS.map((_, k) => `<i class="${k < i ? 'done' : ''}"></i>`).join('')}</div>
+      <p class="qn">QUESTION ${i + 1} OF ${QS.length}</p>
+      <p class="q">${q}</p>
+      ${answers.map(([a, p]) => `<button class="ans" data-p="${p}">${a}</button>`).join('')}`;
+    stage.querySelectorAll('.ans').forEach(b => b.onclick = () => { picks.push(b.dataset.p); i++; question(); });
+  }
+
+  function result() {
+    const count = {};
+    picks.forEach(p => count[p] = (count[p] || 0) + 1);
+    const max = Math.max(...Object.values(count));
+    const tied = Object.keys(count).filter(k => count[k] === max);
+    const win = tied[Math.floor(Math.random() * tied.length)];
+    const r = P[win], sofi = P[SOFI_PIGEON];
+    const top = Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+    const best = store.get('best', {}); best.quiz = r.short; store.set('best', best);
+    store.set('pigeon-type', win);
+
+    stage.innerHTML = `<div class="res">
+        <small>YOU ARE A…</small>
+        <div class="plop-lg" id="plop-res"></div>
+        <h2>${r.name}</h2>
+        <p class="desc hand">${r.desc}</p>
+        <div class="bars">${top.map(([k, n]) => `<div class="bar-row"><div>${P[k].short}<div class="b"><i style="width:${Math.round(n / QS.length * 100)}%;background:${P[k].outfit}"></i></div></div><span>${Math.round(n / QS.length * 100)}%</span></div>`).join('')}</div>
+        <div class="match"><div class="plop-xs">${plopSVG({ outfit: sofi.outfit })}</div><div><b>Your bestie match</b><br>Sofi is a <b>${sofi.name}</b>. ${win === SOFI_PIGEON ? 'Same pigeon. Of course.' : 'Together you are one fully functional pigeon.'}</div></div>
+        <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 13: I am a ' + r.name + ' 🐦')}">Tell Sofi my pigeon</a>
+        <button class="btn" id="again">Take it again</button>
+      </div>`;
+    mountPlop(document.getElementById('plop-res'), { outfit: r.outfit });
+    document.getElementById('again').onclick = intro;
+  }
+
+  intro();
+</script>
 </body>
 </html>

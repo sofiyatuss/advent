@@ -2,21 +2,56 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 17</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 14px 10px; }
+  .intro { text-align: center; margin: 0 0 12px; }
+  .grid { display: grid; gap: 6px; max-width: 330px; margin: 0 auto 14px; }
+  .row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .row.shake { animation: shake .35s steps(4); }
+  .tile {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--cream);
+    border: 3px solid rgba(58, 42, 32, .35); font-family: 'Pixelify Sans', monospace; font-size: 26px; font-weight: 600; text-transform: uppercase;
+  }
+  .tile.filled { border-color: var(--ink); }
+  .tile.g, .tile.y, .tile.x { color: #fff; border-color: var(--ink); animation: flip .4s steps(4) both; }
+  .tile.g { background: #6AAA64; }
+  .tile.y { background: #D4A017; }
+  .tile.x { background: #7A7684; }
+  .kb { display: grid; gap: 6px; }
+  .kr { display: flex; gap: 4px; justify-content: center; }
+  .key {
+    flex: 1; max-width: 36px; height: 48px; font-family: 'Pixelify Sans', monospace; font-size: 17px; font-weight: 600;
+    background: var(--cream); color: var(--ink); border: 3px solid var(--ink); padding: 0; text-transform: uppercase; touch-action: manipulation;
+  }
+  .key.wide { max-width: 62px; flex: 1.6; font-size: 14px; }
+  .key.g { background: #6AAA64; color: #fff; }
+  .key.y { background: #D4A017; color: #fff; }
+  .key.x { background: #7A7684; color: #fff; }
+  .msg { text-align: center; min-height: 26px; font-size: 17px; color: var(--red); margin: 0 0 8px; }
+  .win { display: none; text-align: center; margin-top: 14px; }
+  .win.on { display: block; }
+  .win .big { font-family: 'Pixelify Sans', monospace; font-size: 34px; color: #6AAA64; margin: 4px 0; letter-spacing: 3px; }
+  .win .plop-md { width: 110px; }
+  .win p { font-size: 22px; margin: 6px 0 14px; }
+  @keyframes flip { 0% { transform: scaleY(1); } 50% { transform: scaleY(.1); } 100% { transform: scaleY(1); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+</style>
 </head>
 <body data-day="17">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 17: Plopdle — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Plopdle</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 17: Plopdle ===== -->
+    <p class="intro">Guess the <b>6-letter</b> word in 6 tries.<br>🟩 right spot · 🟨 wrong spot · ⬜ not in it</p>
+    <p class="msg" id="msg"></p>
+    <div class="grid" id="grid"></div>
+    <div class="kb" id="kb"></div>
+    <div class="win" id="win"></div>
     <!-- ===== end of day 17 content ===== -->
   </main>
 
@@ -24,6 +59,104 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- the word (scrambled so it isn't readable in the page source) + the line shown when she wins ----
+  const WORD = atob('YW5jaG9y');
+  const WHY = "it's always the якорь ⚓";
+
+  const N = WORD.length, TRIES = 6;
+  const saved = store.get('plopdle', { guesses: [], done: false });
+  let cur = '';
+  const grid = document.getElementById('grid'), msg = document.getElementById('msg');
+
+  for (let r = 0; r < TRIES; r++) {
+    const row = document.createElement('div'); row.className = 'row';
+    for (let c = 0; c < N; c++) { const t = document.createElement('div'); t.className = 'tile'; row.appendChild(t); }
+    grid.appendChild(row);
+  }
+
+  const KEYS = ['qwertyuiop', 'asdfghjkl', '+zxcvbnm-'];
+  const kb = document.getElementById('kb');
+  const keyEls = {};
+  KEYS.forEach(line => {
+    const kr = document.createElement('div'); kr.className = 'kr';
+    [...line].forEach(k => {
+      const b = document.createElement('button');
+      b.className = 'key' + ('+-'.includes(k) ? ' wide' : '');
+      b.textContent = k === '+' ? 'enter' : k === '-' ? '⌫' : k;
+      b.addEventListener('pointerdown', e => { e.preventDefault(); press(k === '+' ? 'Enter' : k === '-' ? 'Backspace' : k); });
+      keyEls[k] = b; kr.appendChild(b);
+    });
+    kb.appendChild(kr);
+  });
+  addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-z]$/i.test(e.key)) press(e.key); });
+
+  function score(guess) {
+    const res = Array(N).fill('x'), left = {};
+    for (let i = 0; i < N; i++) { if (guess[i] === WORD[i]) res[i] = 'g'; else left[WORD[i]] = (left[WORD[i]] || 0) + 1; }
+    for (let i = 0; i < N; i++) if (res[i] !== 'g' && left[guess[i]]) { res[i] = 'y'; left[guess[i]]--; }
+    return res;
+  }
+  const rank = { x: 0, y: 1, g: 2 };
+  function paintRow(r, guess, animate) {
+    const res = score(guess);
+    [...grid.children[r].children].forEach((t, i) => {
+      t.textContent = guess[i];
+      setTimeout(() => t.classList.add(res[i]), animate ? i * 180 : 0);
+      if (animate) t.style.animationDelay = (i * 180) + 'ms';
+      const k = keyEls[guess[i]];
+      const old = ['g', 'y', 'x'].find(c => k.classList.contains(c));
+      if (!old || rank[res[i]] > rank[old]) { k.classList.remove('g', 'y', 'x'); k.classList.add(res[i]); }
+    });
+    return res;
+  }
+  function drawCur() {
+    const row = grid.children[saved.guesses.length];
+    if (!row) return;
+    [...row.children].forEach((t, i) => { t.textContent = cur[i] || ''; t.classList.toggle('filled', !!cur[i]); });
+  }
+
+  function press(k) {
+    if (saved.done) return;
+    msg.textContent = '';
+    if (k === 'Backspace') { cur = cur.slice(0, -1); return drawCur(); }
+    if (k === 'Enter') {
+      if (cur.length < N) {
+        msg.textContent = `Plop needs ${N} letters`;
+        const row = grid.children[saved.guesses.length]; row.classList.add('shake'); setTimeout(() => row.classList.remove('shake'), 400);
+        return;
+      }
+      const r = saved.guesses.length;
+      saved.guesses.push(cur);
+      paintRow(r, cur, true);
+      const won = cur === WORD;
+      cur = '';
+      if (won || saved.guesses.length >= TRIES) { saved.done = true; setTimeout(() => finish(won), N * 180 + 400); }
+      store.set('plopdle', saved);
+      return;
+    }
+    if (cur.length < N) { cur += k.toLowerCase(); drawCur(); }
+  }
+
+  function finish(won) {
+    const emoji = saved.guesses.map(g => score(g).map(c => ({ g: '🟩', y: '🟨', x: '⬜' })[c]).join('')).join('\n');
+    const tries = won ? saved.guesses.length : 'X';
+    const w = document.getElementById('win');
+    w.innerHTML = `
+      <div class="plop-md" id="plop-win" style="margin:0 auto"></div>
+      <div class="big">${WORD.toUpperCase()}</div>
+      <p class="hand">${won ? WHY : 'Plop is disappointed.<br>' + WHY}</p>
+      <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Plopdle ' + tries + '/6\n' + emoji)}">Send my result to Sofi</a>`;
+    w.classList.add('on');
+    kb.style.display = 'none';
+    mountPlop(document.getElementById('plop-win'), { outfit: '#6AAA64' });
+  }
+
+  // restore progress
+  saved.guesses.forEach((g, r) => paintRow(r, g, false));
+  if (saved.done) finish(saved.guesses[saved.guesses.length - 1] === WORD);
+</script>
 </body>
 </html>

@@ -20,7 +20,7 @@ const DAYS = [
   { n: 7,  slug: '8chem', title: 'Build your yacht',          outfit: '#1F4E79', sticker: 'Captain Plop' },
   { n: 8,  slug: '8k8rb', title: 'Puzzle day',                outfit: '#6E8B3D', sticker: 'Thinking Plop' },
   { n: 9,  slug: '8myyp', title: 'Moodboard',                 outfit: '#D98BA6', sticker: 'Aesthetic Plop' },
-  { n: 10, slug: '97b5r', title: 'Guess who texted this',     outfit: '#4A4A58', sticker: 'Detective Plop' },
+  { n: 10, slug: '97b5r', title: 'Guess who',                 outfit: '#4A4A58', sticker: 'Detective Plop' },
   { n: 11, slug: 'ct396', title: 'Messages for you',          outfit: '#E07A5F', sticker: 'Mail Plop' },
   { n: 12, slug: 'e79he', title: 'Top 5 unhinged moments',    outfit: '#9B2D5C', sticker: 'Chaos Plop' },
   { n: 13, slug: 'et9px', title: 'Which pigeon are you?',     outfit: '#7FB7BE', sticker: 'Quiz Plop' },

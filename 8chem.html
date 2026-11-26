@@ -6,17 +6,54 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 7</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 14px 12px; }
+  .steps { display: flex; gap: 4px; margin-bottom: 14px; }
+  .steps i { flex: 1; height: 10px; border: 2px solid var(--ink); background: var(--cream); }
+  .steps i.on { background: #1F4E79; }
+  .step-title { font-family: 'Pixelify Sans', monospace; font-size: 24px; text-align: center; margin: 0; }
+  .step-sub { text-align: center; margin: 2px 0 14px; opacity: .75; }
+  .opts { display: grid; gap: 8px; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .opt {
+    font-family: inherit; font-size: 17px; text-align: left; color: var(--ink); background: var(--cream);
+    border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); padding: 10px 12px; cursor: pointer; display: flex; gap: 10px; align-items: center;
+  }
+  .opt .ic { font-size: 24px; width: 30px; text-align: center; flex: none; }
+  .opt small { display: block; opacity: .7; font-size: 14px; }
+  .opt.on { background: #1F4E79; color: #fff; }
+  .opt:active { transform: translateY(3px); box-shadow: none; }
+  .name-in, .other-in {
+    width: 100%; font-family: 'Pixelify Sans', monospace; font-size: 22px; text-align: center; padding: 10px;
+    border: 4px solid var(--ink); border-radius: 0; margin-bottom: 10px; background: #fff; color: var(--ink);
+  }
+  .other-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 10px; }
+  .other-row .other-in { font-size: 17px; margin: 0; text-align: left; }
+  .other-row button { font-family: 'Pixelify Sans', monospace; font-size: 16px; border: 3px solid var(--ink); background: var(--gold); padding: 0 14px; }
+  .err { text-align: center; color: var(--red); min-height: 22px; font-size: 16px; margin: 8px 0 0; }
+  .nav { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 12px; }
+  .nav .btn { margin: 0; }
+  .count { text-align: center; font-size: 15px; opacity: .7; margin-top: 8px; }
+
+  .cert { background: #FFFDF6; border: 4px double var(--ink); outline: 4px solid var(--ink); outline-offset: 3px; padding: 14px 12px; margin: 6px 4px 18px; }
+  .cert h2 { text-align: center; font-size: 18px; letter-spacing: 1px; margin: 0; }
+  .cert .yname { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 28px; color: #1F4E79; margin: 4px 0 8px; word-break: break-word; }
+  .cert > svg { display: block; width: 100%; height: auto; border: 3px solid var(--ink); background: #F6C9A0; }
+  .spec { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; }
+  .spec td { padding: 5px 2px; border-bottom: 2px dashed #ddd; vertical-align: top; }
+  .spec td:first-child { font-family: 'Pixelify Sans', monospace; width: 38%; color: #1F4E79; }
+  .price { text-align: center; font-family: 'Pixelify Sans', monospace; font-size: 26px; color: var(--red); margin: 10px 0 2px; }
+  .duty { text-align: center; font-size: 20px; margin: 6px 0 0; }
+  .seal { text-align: center; font-size: 14px; opacity: .6; margin-top: 8px; }
+</style>
 </head>
 <body data-day="7">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 7: A coupon — content goes here ===== -->
-    <div class="placeholder">
-      <h2>A coupon</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 7: Build your yacht ===== -->
+    <div id="stage"></div>
     <!-- ===== end of day 7 content ===== -->
   </main>
 
@@ -24,6 +61,242 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- all the choices (edit freely) ----
+  const STYLES = [
+    { id: 'classic', ic: '🤍', t: 'Classic white superyacht', hull: '#FFFFFF', trim: '#1F4E79', cabin: '#F2F2F2', win: '#2B3A55' },
+    { id: 'stealth', ic: '🖤', t: 'Black stealth mafia yacht', hull: '#1C1C22', trim: '#C8A951', cabin: '#2C2C34', win: '#C8A951' },
+    { id: 'barbie',  ic: '💗', t: 'Pink Barbie yacht', hull: '#F48FB1', trim: '#FFFFFF', cabin: '#F8BBD0', win: '#AD1457' },
+    { id: 'pirate',  ic: '🏴‍☠️', t: 'Pirate ship', hull: '#7A4A2A', trim: '#3A2A20', cabin: '#9C6B43', win: '#2B2238' },
+    { id: 'pigeon',  ic: '🐦', t: 'Giant pigeon (Plop-shaped)', hull: '#A9A6B3', trim: '#5E9C8A', cabin: '#C9C6D2', win: '#3A2A20' }
+  ];
+  const SIZES = [
+    { id: 30,  ic: '🚤', t: '30 m', s: 'cute', price: 12e6, decks: 1 },
+    { id: 80,  ic: '🛥️', t: '80 m', s: 'flex', price: 95e6, decks: 2 },
+    { id: 150, ic: '🛳️', t: '150 m', s: "bigger than The Devil's ego", price: 400e6, decks: 3 }
+  ];
+  const EXTRAS = [
+    { id: 'heli', ic: '🚁', t: 'Helipad', price: 8e6 },
+    { id: 'pool', ic: '🏊', t: 'Infinity pool', price: 5e6 },
+    { id: 'tub', ic: '🛁', t: 'Hot tub', price: 1e6 },
+    { id: 'coop', ic: '🐦', t: 'Pigeon coop', price: 12 },
+    { id: 'casino', ic: '🎰', t: 'Mini casino', price: 20e6 },
+    { id: 'karaoke', ic: '🎤', t: 'Karaoke stage', price: 5e5 },
+    { id: 'sushi', ic: '🍣', t: 'Sushi bar', price: 2e6 },
+    { id: 'basement', ic: '🚪', t: 'A basement (Thursdays only)', price: 3e6 },
+    { id: 'dj', ic: '🎧', t: 'DJ booth', price: 1e6 }
+  ];
+  const CREW = [
+    { id: 'plop', ic: '🐦', t: 'Captain Plop' },
+    { id: 'sofi', ic: '⚓', t: 'Sofi as first mate' },
+    { id: 'chef', ic: '👨‍🍳', t: 'A private chef' },
+    { id: 'dj', ic: '🎶', t: 'A DJ' },
+    { id: 'zhenya', ic: '🧍', t: 'Zhenya' }
+  ];
+  const PLACES = [
+    { id: 'Sicily', ic: '🍋' }, { id: 'Korea', ic: '🇰🇷' }, { id: 'Greece', ic: '🇬🇷' },
+    { id: 'Bahamas', ic: '🏝️' }, { id: 'Monaco', ic: '🇲🇨' }, { id: 'Cyprus', ic: '🇨🇾' }
+  ];
+  const PAY = [
+    { id: 'Your soul', ic: '👻' }, { id: 'Loans', ic: '🏦' }, { id: 'Billionaire husband', ic: '💍' },
+    { id: 'Crypto scam money', ic: '🪙' }, { id: 'Unemployment benefits', ic: '📄' }, { id: 'Liquidated assets', ic: '💧' }
+  ];
+
+  const S = store.get('yacht', null) || { step: 0, name: '', style: null, size: null, extras: [], crew: [], others: [], place: null, pay: null };
+  const stage = document.getElementById('stage');
+  const TOTAL = 7;
+  const save = () => store.set('yacht', S);
+
+  function head(title, sub) {
+    return `<div class="steps">${Array.from({ length: TOTAL }, (_, k) => `<i class="${k <= S.step ? 'on' : ''}"></i>`).join('')}</div>
+      <p class="step-title">${title}</p><p class="step-sub">${sub}</p>`;
+  }
+  function optBtn(o, on, label, sub) {
+    return `<button class="opt${on ? ' on' : ''}" data-id="${o.id}"><span class="ic">${o.ic}</span><span>${label}${sub ? `<small>${sub}</small>` : ''}</span></button>`;
+  }
+  function nav(nextLabel = 'Next →') {
+    return `<p class="err" id="err"></p><div class="nav">
+      <button class="btn" id="back"${S.step === 0 ? ' style="visibility:hidden"' : ''}>← Back</button>
+      <button class="btn btn-reply" id="next">${nextLabel}</button></div>`;
+  }
+  const err = t => { document.getElementById('err').textContent = t; };
+
+  function render() {
+    save();
+    const st = S.step;
+    let html = '', check = () => true;
+
+    if (st === 0) {
+      html = head('Name your yacht', 'Choose wisely. It will be painted on the side.') +
+        `<input class="name-in" id="name" maxlength="24" placeholder="Yacht name" value="${S.name.replace(/"/g, '&quot;')}">` + nav();
+      check = () => S.name.trim() ? true : (err('Every yacht needs a name'), false);
+    }
+    if (st === 1) {
+      html = head('Pick a style', 'This is who you are now') + `<div class="opts">${STYLES.map(o => optBtn(o, S.style === o.id, o.t)).join('')}</div>` + nav();
+      check = () => S.style ? true : (err('Pick a style first'), false);
+    }
+    if (st === 2) {
+      html = head('How big?', 'Size matters (on yachts)') + `<div class="opts">${SIZES.map(o => optBtn(o, S.size === o.id, o.t, o.s)).join('')}</div>` + nav();
+      check = () => S.size ? true : (err('Pick a size first'), false);
+    }
+    if (st === 3) {
+      html = head('Deck extras', 'Pick up to 4') + `<div class="opts">${EXTRAS.map(o => optBtn(o, S.extras.includes(o.id), o.t)).join('')}</div>
+        <p class="count">${S.extras.length} / 4 picked</p>` + nav();
+      check = () => S.extras.length ? true : (err('Pick at least one extra'), false);
+    }
+    if (st === 4) {
+      html = head('Hire your crew', 'Pick as many as you want') + `<div class="opts">${CREW.map(o => optBtn(o, S.crew.includes(o.id), o.t)).join('')}
+        ${S.others.map((n, k) => `<button class="opt on" data-other="${k}"><span class="ic">✨</span><span>${n}<small>tap to remove</small></span></button>`).join('')}</div>
+        <div class="other-row"><input class="other-in" id="other" maxlength="24" placeholder="Someone else…"><button id="add">Add</button></div>` + nav();
+      check = () => (S.crew.length || S.others.length) ? true : (err('A yacht needs at least one crew member'), false);
+    }
+    if (st === 5) {
+      html = head('First destination', 'Where are we sailing?') + `<div class="opts two">${PLACES.map(o => optBtn(o, S.place === o.id, o.id)).join('')}</div>` + nav();
+      check = () => S.place ? true : (err('Pick where we\'re going'), false);
+    }
+    if (st === 6) {
+      html = head('How are you paying?', 'Be honest') + `<div class="opts">${PAY.map(o => optBtn(o, S.pay === o.id, o.id)).join('')}</div>` + nav('Build my yacht 🛥️');
+      check = () => S.pay ? true : (err('Plop needs to know who is paying'), false);
+    }
+    if (st === 7) return certificate();
+
+    stage.innerHTML = html;
+
+    // wiring
+    if (st === 0) {
+      const inp = document.getElementById('name');
+      inp.oninput = () => { S.name = inp.value; err(''); save(); };
+    }
+    const single = { 1: 'style', 2: 'size', 5: 'place', 6: 'pay' }[st];
+    if (single) stage.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      S[single] = st === 2 ? Number(b.dataset.id) : b.dataset.id; render();
+    });
+    if (st === 3) stage.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      const id = b.dataset.id;
+      if (S.extras.includes(id)) S.extras = S.extras.filter(x => x !== id);
+      else if (S.extras.length >= 4) return err('Max 4. This is a yacht, not a cruise ship');
+      else S.extras.push(id);
+      render();
+    });
+    if (st === 4) {
+      stage.querySelectorAll('[data-id]').forEach(b => b.onclick = () => {
+        const id = b.dataset.id;
+        S.crew = S.crew.includes(id) ? S.crew.filter(x => x !== id) : [...S.crew, id]; render();
+      });
+      stage.querySelectorAll('[data-other]').forEach(b => b.onclick = () => { S.others.splice(Number(b.dataset.other), 1); render(); });
+      const add = () => {
+        const v = document.getElementById('other').value.trim();
+        if (!v) return err('Type a name first');
+        S.others.push(v); render();
+      };
+      document.getElementById('add').onclick = add;
+      document.getElementById('other').onkeydown = e => { if (e.key === 'Enter') add(); };
+    }
+    document.getElementById('back').onclick = () => { S.step = Math.max(0, S.step - 1); render(); };
+    document.getElementById('next').onclick = () => { if (check()) { S.step++; render(); document.getElementById('content').scrollIntoView({ behavior: 'smooth' }); } };
+  }
+
+  // ---------- the drawing ----------
+  function drawYacht() {
+    const sty = STYLES.find(s => s.id === S.style), size = SIZES.find(s => s.id === S.size);
+    const W = 340, H = 220, sea = 158;
+    const len = size.decks === 1 ? 210 : size.decks === 2 ? 250 : 284;
+    const x0 = (W - len) / 2 - 8, bow = x0 + len + 22;
+    const glass = sty.id === 'barbie' ? '#7A1E4C' : sty.id === 'stealth' ? '#0B0B10' : '#1E2A3F';
+    const gold = '#D9B65A';
+    let g = '';
+    // golden-hour sky, sun, Monaco-ish hills
+    g += `<rect width="${W}" height="${H}" fill="#F6C9A0"/><rect width="${W}" height="70" fill="#F2B38A"/><rect width="${W}" height="30" fill="#E99C7A"/>`;
+    g += `<rect x="236" y="96" width="44" height="44" fill="#FBE3A1"/><rect x="230" y="104" width="56" height="28" fill="#FBE3A1"/>`;
+    g += `<polygon points="0,${sea} 0,${sea - 34} 40,${sea - 44} 90,${sea - 30} 130,${sea - 38} 170,${sea - 22} 200,${sea}" fill="#C98C7A"/>`;
+    for (let i = 0; i < 9; i++) g += `<rect x="${8 + i * 20}" y="${sea - 26 + (i % 3) * 5}" width="10" height="${26 - (i % 3) * 5}" fill="#E8B9A2"/>`;
+    // sea
+    g += `<rect y="${sea}" width="${W}" height="${H - sea}" fill="#1F4E79"/>`;
+    g += `<rect x="226" y="${sea + 6}" width="64" height="3" fill="#FBE3A1"/><rect x="236" y="${sea + 14}" width="44" height="3" fill="#FBE3A1"/><rect x="246" y="${sea + 22}" width="24" height="3" fill="#FBE3A1"/>`;
+    // hull reflection
+    g += `<polygon points="${x0 + 14},${sea + 4} ${bow - 40},${sea + 4} ${bow - 60},${sea + 22} ${x0 + 30},${sea + 22}" fill="${sty.hull}" opacity=".28"/>`;
+    // sleek hull: low stern, rising sheer, sharp raked bow
+    const sh = sea - 30;
+    g += `<polygon points="${x0},${sh + 4} ${bow - 30},${sh - 4} ${bow},${sh - 10} ${bow - 34},${sea + 4} ${x0 + 12},${sea + 4}" fill="${sty.hull}" stroke="#2A2230" stroke-width="3" stroke-linejoin="round"/>`;
+    // hull glass band + gold pinstripe + boot stripe
+    g += `<polygon points="${x0 + 26},${sh + 10} ${bow - 70},${sh + 6} ${bow - 80},${sh + 13} ${x0 + 28},${sh + 16}" fill="${glass}"/>`;
+    g += `<polygon points="${x0 + 8},${sea - 6} ${bow - 28},${sea - 8} ${bow - 31},${sea - 5} ${x0 + 9},${sea - 3}" fill="${sty.id === 'classic' ? '#1F4E79' : gold}"/>`;
+    // the yacht's name painted on the hull
+    g += `<text x="${x0 + 34}" y="${sea - 10}" font-family="Georgia, serif" font-style="italic" font-size="9" fill="${sty.id === 'stealth' ? gold : '#2A2230'}">${escapeHtml(S.name).slice(0, 22)}</text>`;
+    // superstructure: stepped, raked decks with tinted glass
+    let top = sh - 2;
+    for (let d = 0; d < size.decks + 1; d++) {
+      const h = d === size.decks ? 12 : 17;
+      const left = x0 + 26 + d * 22, right = bow - 62 - d * 30;
+      if (right - left < 40) break;
+      top -= h;
+      g += `<polygon points="${left},${top + h} ${left + 6},${top} ${right - 14},${top} ${right},${top + h}" fill="${sty.cabin}" stroke="#2A2230" stroke-width="2.5" stroke-linejoin="round"/>`;
+      if (d < size.decks) g += `<polygon points="${left + 12},${top + 4} ${right - 18},${top + 4} ${right - 9},${top + h - 4} ${left + 10},${top + h - 4}" fill="${glass}"/>`;
+      g += `<rect x="${left + 2}" y="${top + h - 2}" width="${right - left - 4}" height="2" fill="${gold}"/>`;
+    }
+    // radar arch + domes on top
+    const ax = x0 + 26 + size.decks * 22 + 30;
+    g += `<polygon points="${ax},${top} ${ax + 8},${top - 16} ${ax + 34},${top - 16} ${ax + 40},${top}" fill="none" stroke="${sty.trim}" stroke-width="4"/>`;
+    g += `<rect x="${ax + 12}" y="${top - 24}" width="8" height="8" fill="#FFFFFF" stroke="#2A2230" stroke-width="1.5"/><rect x="${ax + 24}" y="${top - 22}" width="6" height="6" fill="#FFFFFF" stroke="#2A2230" stroke-width="1.5"/>`;
+    // stern flag
+    g += `<rect x="${x0 + 4}" y="${sh - 18}" width="2" height="22" fill="#2A2230"/><rect x="${x0 - 10}" y="${sh - 18}" width="14" height="9" fill="#B5473A"/><rect x="${x0 - 10}" y="${sh - 15}" width="14" height="3" fill="#FFFFFF"/>`;
+    // pirate mast + sail + flag
+    if (sty.id === 'pirate') {
+      const mx = x0 + len * 0.5;
+      g += `<rect x="${mx}" y="${top - 58}" width="5" height="58" fill="#3A2A20"/>
+            <polygon points="${mx + 5},${top - 54} ${mx + 62},${top - 30} ${mx + 5},${top - 8}" fill="#F3E6CF" stroke="#3A2A20" stroke-width="2.5"/>
+            <rect x="${mx + 5}" y="${top - 70}" width="24" height="14" fill="#111"/><text x="${mx + 17}" y="${top - 59}" font-size="11" text-anchor="middle" fill="#fff">☠</text>`;
+    }
+    // giant pigeon figurehead on the bow
+    if (sty.id === 'pigeon') g += `<svg x="${bow - 78}" y="${sh - 76}" width="84" height="82" viewBox="0 0 34 33">${plopSVG({ outfit: '#5E9C8A', flip: true }).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>`;
+    // captain Plop on the top deck
+    if (S.crew.includes('plop') && sty.id !== 'pigeon') g += `<svg x="${x0 + 30 + size.decks * 22}" y="${top - 30}" width="30" height="29" viewBox="0 0 34 33">${plopSVG({ outfit: '#1F4E79' }).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>`;
+    // extras on the aft deck
+    EXTRAS.filter(e => S.extras.includes(e.id)).forEach((e, k) => {
+      g += `<text x="${x0 + 14 + k * 17}" y="${sh}" font-size="13" text-anchor="middle">${e.ic}</text>`;
+    });
+    return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+  }
+
+  function money(n) {
+    if (n >= 1e6) return '€' + (n / 1e6).toFixed(n >= 1e8 ? 0 : 1).replace('.0', '') + ' million';
+    return '€' + Math.round(n).toLocaleString('de-AT');
+  }
+
+  function certificate() {
+    const sty = STYLES.find(s => s.id === S.style), size = SIZES.find(s => s.id === S.size);
+    const ex = EXTRAS.filter(e => S.extras.includes(e.id));
+    const crew = [...CREW.filter(c => S.crew.includes(c.id)).map(c => c.t), ...S.others];
+    let price = size.price + ex.reduce((a, e) => a + e.price, 0);
+    if (sty.id === 'pigeon') price *= 2;
+    const priceText = money(price);
+    const rows = [
+      ['Style', sty.t], ['Length', `${size.t} (${size.s})`], ['On deck', ex.map(e => e.ic + ' ' + e.t).join('<br>')],
+      ['Crew', crew.join('<br>')], ['First stop', S.place], ['Paid with', S.pay]
+    ];
+    stage.innerHTML = `
+      <div class="cert">
+        <h2>OFFICIAL YACHT CERTIFICATE</h2>
+        <div class="yname">${escapeHtml(S.name)}</div>
+        ${drawYacht()}
+        <table class="spec">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+        <div class="price">${priceText}</div>
+        <p class="duty hand">Cleaning duty: Del, top to bottom 🧽</p>
+        <p class="seal">Registered with the Plop Maritime Authority · ${new Date().getFullYear()}</p>
+      </div>
+      <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink(
+        `Day 7: I built my yacht 🛥️\n"${S.name}"\n${sty.t}, ${size.t}\nOn deck: ${ex.map(e => e.t).join(', ')}\nCrew: ${crew.join(', ')}\nFirst stop: ${S.place}\nPaid with: ${S.pay}\nPrice: ${priceText}`)}">Send my yacht to Sofi</a>
+      <button class="btn" id="rebuild">Build another yacht</button>`;
+    document.getElementById('rebuild').onclick = () => {
+      Object.assign(S, { step: 0, name: '', style: null, size: null, extras: [], crew: [], others: [], place: null, pay: null }); render();
+    };
+    toast(`<div class="plop-xs">${plopSVG({ outfit: '#1F4E79' })}</div><div><b>Yacht registered!</b><br>Captain Plop approves.</div>`);
+  }
+  function escapeHtml(t) { return t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+  render();
+</script>
 </body>
 </html>

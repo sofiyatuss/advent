@@ -6,24 +6,62 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 9</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #B9824F; border-color: var(--ink); padding: 14px 10px; }
+  .intro { text-align: center; color: var(--cream); margin: 0 0 14px; font-size: 22px; }
+  .board { columns: 2; column-gap: 12px; }
+  .pin {
+    break-inside: avoid; margin: 0 0 16px; background: #fff; padding: 7px 7px 18px; border: 3px solid var(--ink);
+    position: relative; cursor: zoom-in; box-shadow: 0 4px 0 rgba(58, 42, 32, .5);
+  }
+  .pin img { display: block; width: 100%; height: auto; }
+  .pin::before {
+    content: ''; position: absolute; top: -10px; left: 50%; width: 44px; height: 16px; transform: translateX(-50%) rotate(-3deg);
+    background: rgba(233, 184, 74, .85); border: 2px solid rgba(58, 42, 32, .4);
+  }
+  .light {
+    position: fixed; inset: 0; z-index: 30; background: rgba(43, 34, 56, .92); display: none;
+    align-items: center; justify-content: center; padding: 18px;
+  }
+  .light.on { display: flex; }
+  .light img { max-width: 100%; max-height: 86vh; border: 6px solid #fff; }
+  .light button {
+    position: absolute; top: 16px; right: 16px; font-family: 'Pixelify Sans', monospace; font-size: 18px;
+    background: var(--cream); border: 3px solid var(--ink); padding: 4px 12px; cursor: pointer;
+  }
+</style>
 </head>
 <body data-day="9">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 9: Moodboard — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Moodboard</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 9: Moodboard ===== -->
+    <p class="intro hand">things that are so you ♡</p>
+    <div class="board" id="board"></div>
     <!-- ===== end of day 9 content ===== -->
   </main>
 
   <footer id="day-foot"></footer>
 </div>
+<div class="light" id="light"><button id="close">close</button><img id="big" alt=""></div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+  // ---- to add pictures: upload them as mood-15.jpg etc. and add the file names here ----
+  const PICS = ['01','02','03','04','05','06','07','08','09','10','11','12','13','14'].map(n => `mood-${n}.jpg`);
+  const board = document.getElementById('board');
+  const light = document.getElementById('light'), big = document.getElementById('big');
+  PICS.forEach((src, i) => {
+    const d = document.createElement('div');
+    d.className = 'pin';
+    d.style.transform = `rotate(${((i * 37) % 7) - 3}deg)`;
+    d.innerHTML = `<img src="${src}" alt="" loading="lazy">`;
+    d.onclick = () => { big.src = src; light.classList.add('on'); };
+    board.appendChild(d);
+  });
+  light.onclick = e => { if (e.target !== big) light.classList.remove('on'); };
+</script>
 </body>
 </html>
