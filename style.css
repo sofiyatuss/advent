@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&family=Patrick+Hand&display=swap');
 
 :root {
   --wall: #F3E6CF;
@@ -21,8 +21,8 @@ body {
   background-image:
     linear-gradient(var(--night) 0 0);
   color: var(--ink);
-  font-family: 'Pixelify Sans', 'VT323', monospace;
-  font-size: 18px;
+  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+  font-size: 20px;
   line-height: 1.4;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
@@ -43,13 +43,17 @@ body {
 }
 .panel h2, .card h2 { margin: 0 0 10px; font-size: 22px; font-weight: 600; }
 h1 { font-weight: 600; }
+h1, h2, h3, .btn, .door, .day-badge, .sticker span, .stat b, .row-head span, .hero #sub,
+.q-num, .meta, .code, .hud, .pad button, .chip, .opt, .rn, .nm, .master-box input {
+  font-family: 'Pixelify Sans', monospace;
+}
 
 /* ---------- archive ---------- */
 .hero { text-align: center; padding-top: 22px; }
 .hero .plop-lg { width: 190px; margin: 0 auto; animation: bob 1.2s steps(2) infinite; }
 .hero h1 { font-size: 34px; margin: 6px 0 0; letter-spacing: 1px; }
 .hero .for { margin: 0; font-size: 20px; color: var(--red); }
-.hero #sub { margin: 2px 0 0; font-family: 'VT323', monospace; font-size: 22px; }
+.hero #sub { margin: 2px 0 0; font-family: 'Patrick Hand', cursive; font-size: 22px; }
 
 .roof {
   height: 18px; margin: 0 -16px 14px; background:
@@ -76,7 +80,7 @@ h1 { font-weight: 600; }
 .sticker.have { border: 2px solid var(--ink); background: var(--cream); padding: 2px; }
 .sticker svg { width: 100%; height: 100%; }
 .row-head { display: flex; justify-content: space-between; align-items: baseline; }
-.row-head span { font-family: 'VT323', monospace; font-size: 22px; }
+.row-head span { font-family: 'Patrick Hand', cursive; font-size: 22px; }
 
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .stat { background: var(--cream); border: 3px solid var(--ink); padding: 8px 10px; display: flex; flex-direction: column; }
