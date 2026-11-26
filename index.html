@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2B2238">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plop's Advent">
+<title>Plop's Advent</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="card hero">
+    <div class="roof"></div>
+    <div class="plop-lg" id="plop-hero"></div>
+    <h1>Plop's Advent</h1>
+    <p id="sub"></p>
+  </div>
+
+  <div class="panel">
+    <h2>The doors</h2>
+    <div class="doors" id="doors"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row-head"><h2>Sticker book</h2><span id="sticker-count"></span></div>
+    <div class="sticker-book" id="stickers"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Plop's high scores</h2>
+    <div class="stats" id="stats"></div>
+  </div>
+</div>
+<script src="plop.js"></script>
+<script src="advent.js"></script>
+<script>initArchive();</script>
+</body>
+</html>

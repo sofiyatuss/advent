@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Chip list (secret)</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  body { background: var(--wall); }
+  .chip { display: grid; grid-template-columns: 1fr 96px; gap: 10px; align-items: center; background: var(--cream); border: 3px solid var(--ink); padding: 10px; margin-bottom: 10px; break-inside: avoid; }
+  .chip h3 { margin: 0; font-size: 20px; }
+  .chip code { display: block; font-family: 'VT323', monospace; font-size: 17px; word-break: break-all; margin: 4px 0 8px; }
+  .chip button { font-family: inherit; font-size: 15px; border: 3px solid var(--ink); background: var(--gold); padding: 4px 10px; cursor: pointer; }
+  .qr { width: 96px; height: 96px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; }
+  .qr img, .qr canvas { width: 96px !important; height: 96px !important; image-rendering: pixelated; }
+  .tip { font-size: 16px; }
+  @media print {
+    .tip, .print-btn { display: none; }
+    .wrap { max-width: none; }
+    .list { columns: 2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>Chip list 🔒</h2>
+    <p class="tip">Don't share this page. For each chip: tap <b>Copy</b>, open NFC Tools → Write → Add a record → URL, paste, write, then test. Each QR is the backup for that box.</p>
+    <button class="btn print-btn" onclick="print()">Print QR backup sheet</button>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+<script src="plop.js"></script>
+<script src="advent.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const base = location.href.replace(/[^/]*$/, '');
+  const list = document.getElementById('list');
+  DAYS.forEach(d => {
+    const url = base + d.slug + '.html';
+    const el = document.createElement('div');
+    el.className = 'chip';
+    el.innerHTML = `<div><h3>Chip ${d.n} · ${d.title}</h3><code>${url}</code><button>Copy</button></div><div class="qr" id="qr${d.n}">QR needs internet</div>`;
+    el.querySelector('button').onclick = async e => {
+      try { await navigator.clipboard.writeText(url); e.target.textContent = 'Copied!'; }
+      catch (err) { prompt('Copy this:', url); }
+      setTimeout(() => e.target.textContent = 'Copy', 1500);
+    };
+    list.appendChild(el);
+    if (window.QRCode) {
+      const box = document.getElementById('qr' + d.n);
+      box.textContent = '';
+      new QRCode(box, { text: url, width: 192, height: 192, colorDark: '#3A2A20', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    }
+  });
+</script>
+</body>
+</html>
