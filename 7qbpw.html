@@ -6,16 +6,129 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 5</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #262046; color: #F3E6CF; border-color: #120E24; }
+  #content h2 { color: #E9B84A; text-align: center; margin: 22px 0 10px; font-size: 22px; }
+  #content h2:first-child { margin-top: 0; }
+  .file { text-align: center; font-family: 'VT323', monospace; font-size: 20px; opacity: .85; margin: 0 0 6px; }
+  .stars { text-align: center; letter-spacing: 6px; color: #E9B84A; margin: 0 0 12px; }
+  .big3 { display: grid; gap: 10px; }
+  .sign {
+    display: grid; grid-template-columns: 58px 1fr; gap: 12px; align-items: center;
+    background: #352C5E; border: 3px solid #120E24; padding: 10px 12px;
+  }
+  .glyph { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 34px; background: #F3E6CF; color: #262046; border: 3px solid #120E24; }
+  .sign small { display: block; font-size: 14px; color: #E9B84A; letter-spacing: 1px; }
+  .sign b { font-size: 22px; }
+  .sign p { margin: 4px 0 0; font-size: 16px; line-height: 1.35; opacity: .92; }
+  .fact { background: #F3E6CF; color: #3A2A20; border: 3px solid #120E24; padding: 10px 12px; margin-bottom: 10px; font-size: 16px; }
+  .fact b { display: block; font-size: 18px; margin-bottom: 2px; }
+  .planets { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .planets td { white-space: nowrap; }
+  .planets td { padding: 6px 4px; border-bottom: 2px dashed rgba(243, 230, 207, .2); }
+  .planets td:first-child { color: #E9B84A; width: 40%; }
+  .planets td:last-child { text-align: right; opacity: .75; font-family: 'VT323', monospace; font-size: 18px; }
+  .rulers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ruler { background: #352C5E; border: 3px solid #120E24; padding: 10px; text-align: center; }
+  .ruler .sym { font-size: 30px; color: #E9B84A; }
+  .ruler b { display: block; font-size: 19px; }
+  .ruler span { font-size: 14px; opacity: .85; }
+  .elements .el span:first-child { white-space: nowrap; }
+  .elements .el { display: grid; grid-template-columns: 92px 1fr 24px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 16px; }
+  .bar { height: 16px; background: #120E24; border: 2px solid #120E24; }
+  .bar i { display: block; height: 100%; }
+  .num { text-align: center; background: #F3E6CF; color: #3A2A20; border: 3px solid #120E24; padding: 14px; }
+  .num .n { font-size: 64px; line-height: 1; font-weight: 600; color: #B5473A; }
+  .num p { margin: 6px 0 0; font-size: 16px; }
+  .tarot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .card-t {
+    aspect-ratio: 2 / 3.3; background: #F3E6CF; color: #3A2A20; border: 3px solid #120E24; outline: 3px solid #E9B84A; outline-offset: -8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 12px 4px; text-align: center;
+  }
+  .card-t .rn { font-size: 18px; font-weight: 600; }
+  .card-t .ic { font-size: 30px; }
+  .card-t .nm { font-size: 13px; line-height: 1.15; font-weight: 600; }
+  .card-t.main { background: #E9B84A; }
+  .tarot-notes p { font-size: 16px; margin: 10px 0 0; }
+  .tarot-notes b { color: #E9B84A; }
+  .spirit { text-align: center; margin-top: 18px; }
+  .spirit .plop-md { width: 120px; }
+</style>
 </head>
 <body data-day="5">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 5: Your birth chart — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Your birth chart</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 5: Birth chart ===== -->
+    <p class="file">COSMIC FILE: DELIYA<br>27.11.2008 · ~4:30 am · Krasnodar</p>
+    <p class="stars">✦ ✧ ✦ ✧ ✦</p>
+
+    <h2>Your big three</h2>
+    <div class="big3">
+      <div class="sign"><div class="glyph">♐</div><div><small>SUN · WHO YOU ARE</small><b>Sagittarius</b>
+        <p>The free spirit. Says yes to the trip before checking the price, tells the truth even when nobody asked, and is allergic to boredom.</p></div></div>
+      <div class="sign"><div class="glyph">♏</div><div><small>MOON · HOW YOU FEEL</small><b>Scorpio</b>
+        <p>Feels everything at 200% and shows maybe 10% of it. Loyal to the bone. Remembers everything (yes, everything).</p></div></div>
+      <div class="sign"><div class="glyph">♏</div><div><small>RISING · HOW YOU COME ACROSS</small><b>Scorpio</b>
+        <p>First impression: mysterious, a bit intimidating, impossible to read. Then people meet the chaotic Sagittarius underneath.</p></div></div>
+    </div>
+
+    <h2>Rare things in your chart</h2>
+    <div class="fact"><b>🌑 Born on a dark moon</b>You arrived just hours before a New Moon, when the Moon was hiding right next to the Sun. Dark-moon babies are said to be old souls with scary-good intuition.</div>
+    <div class="fact"><b>🔥 Triple Sagittarius</b>Your Sun, Mercury and Mars are all packed together in Sagittarius. You think fast, talk fast, move fast and say exactly what you mean.</div>
+    <div class="fact"><b>🪐 A generational plot twist</b>Pluto was sitting right on the line into Capricorn, a shift that happens about once every 248 years, and it happened around your birthday. Main character behaviour.</div>
+
+    <h2>Your planets</h2>
+    <table class="planets">
+      <tr><td>☿ Mercury</td><td>Sagittarius</td><td>mind</td></tr>
+      <tr><td>♀ Venus</td><td>Capricorn</td><td>love</td></tr>
+      <tr><td>♂ Mars</td><td>Sagittarius</td><td>drive</td></tr>
+      <tr><td>♃ Jupiter</td><td>Capricorn</td><td>luck</td></tr>
+      <tr><td>♄ Saturn</td><td>Virgo</td><td>lessons</td></tr>
+      <tr><td>♅ Uranus</td><td>Pisces</td><td>rebellion</td></tr>
+      <tr><td>♆ Neptune</td><td>Aquarius</td><td>dreams</td></tr>
+      <tr><td>♇ Pluto</td><td>Capricorn</td><td>power</td></tr>
+      <tr><td>☊ North Node</td><td>Aquarius</td><td>destiny</td></tr>
+    </table>
+
+    <h2>Your ruling planets</h2>
+    <div class="rulers">
+      <div class="ruler"><div class="sym">♃</div><b>Jupiter</b><span>rules your Sun: luck, growth, big adventures, and always wanting more</span></div>
+      <div class="ruler"><div class="sym">♇ ♂</div><b>Pluto + Mars</b><span>rule your Scorpio rising: intensity, magnetism, and never backing down</span></div>
+    </div>
+
+    <h2>Your elements</h2>
+    <div class="elements">
+      <div class="el"><span>🜂 Fire</span><div class="bar"><i style="width:75%;background:#E07A5F"></i></div><span>3</span></div>
+      <div class="el"><span>🜄 Water</span><div class="bar"><i style="width:75%;background:#5B7FB0"></i></div><span>3</span></div>
+      <div class="el"><span>🜃 Earth</span><div class="bar"><i style="width:100%;background:#6E8B3D"></i></div><span>4</span></div>
+      <div class="el"><span>🜁 Air</span><div class="bar"><i style="width:25%;background:#C9A0DC"></i></div><span>1</span></div>
+    </div>
+
+    <h2>Life path number</h2>
+    <div class="num">
+      <div class="n">3</div>
+      <b>The Creator</b>
+      <p>2+7+1+1+2+0+0+8 = 21 → 3. Expressive, funny, social and creative. The person who makes every room louder (affectionately). Born to tell stories and make people laugh.</p>
+    </div>
+
+    <h2>Your arcana</h2>
+    <div class="tarot">
+      <div class="card-t"><span class="rn">V</span><span class="ic">🗝️</span><span class="nm">THE<br>HIEROPHANT</span></div>
+      <div class="card-t main"><span class="rn">XII</span><span class="ic">🌙</span><span class="nm">THE<br>HANGED MAN</span></div>
+      <div class="card-t"><span class="rn">X</span><span class="ic">☸️</span><span class="nm">WHEEL OF<br>FORTUNE</span></div>
+    </div>
+    <div class="tarot-notes">
+      <p><b>XII · The Hanged Man (destiny card).</b> Your whole birth date adds up to 12. You see the world from an angle nobody else does. When you pause and flip things upside down, everything clicks.</p>
+      <p><b>V · The Hierophant (personality card).</b> From your birth day, 27. Wise beyond your years: the friend everyone secretly comes to for advice.</p>
+      <p><b>X · Wheel of Fortune (year card).</b> From 2008. Life with you is never boring. Plot twists follow you around, and they tend to work out.</p>
+    </div>
+
+    <div class="spirit">
+      <h2>Spirit animal</h2>
+      <div class="plop-md" id="plop-spirit"></div>
+      <p>Obviously a pigeon. Plop has confirmed it.</p>
     </div>
     <!-- ===== end of day 5 content ===== -->
   </main>
@@ -24,6 +137,9 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+  mountPlop(document.getElementById('plop-spirit'), { outfit: '#2F3A66' });
+</script>
 </body>
 </html>

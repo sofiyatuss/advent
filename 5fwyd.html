@@ -6,16 +6,73 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 1</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .hello { text-align: center; }
+  .hello h2 { font-size: 26px; }
+  .rules { list-style: none; padding: 0; margin: 14px 0 18px; text-align: left; }
+  .rules li { display: grid; grid-template-columns: 34px 1fr; gap: 8px; padding: 8px 0; border-bottom: 2px dashed rgba(58, 42, 32, .25); font-size: 17px; }
+  .rules li b { font-size: 22px; text-align: center; }
+  .gift-btn { background: var(--gold); font-size: 22px; animation: wiggle 1s steps(2) infinite; }
+  .envelope { display: none; margin-top: 6px; }
+  .envelope.open { display: block; animation: pop .4s steps(4); }
+  .letter {
+    background: #fff; border: 4px solid var(--ink); padding: 18px 16px; text-align: center;
+    background-image: repeating-linear-gradient(transparent 0 30px, rgba(91, 127, 176, .18) 30px 32px);
+  }
+  .letter p { font-size: 20px; margin: 0 0 12px; line-height: 1.5; }
+  .letter .sig { font-size: 18px; color: var(--red); margin: 0; }
+  .code-box { margin: 16px 0 10px; background: var(--ink); color: var(--gold); padding: 14px 8px; text-align: center; border: 4px solid var(--ink); }
+  .code-box small { display: block; color: var(--cream); font-size: 13px; letter-spacing: 2px; margin-bottom: 4px; }
+  .code { font-family: 'VT323', monospace; font-size: 30px; letter-spacing: 3px; word-break: break-all; }
+  .steps { background: var(--cream); border: 3px solid var(--ink); padding: 12px 14px; font-size: 16px; }
+  .steps h3 { margin: 0 0 6px; font-size: 19px; }
+  .steps ol { margin: 0; padding-left: 22px; }
+  .steps li { margin-bottom: 6px; }
+  .steps .note { font-size: 14px; opacity: .75; margin: 8px 0 0; }
+  @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+</style>
 </head>
 <body data-day="1">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 1: Welcome + a gift — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Welcome + a gift</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 1: Welcome + gift ===== -->
+    <div class="hello" id="hello">
+      <h2>Hi Del! ♥</h2>
+      <p>Welcome to Plop's Advent. For the next 24 days, every chip opens something new that I made just for you.</p>
+      <ul class="rules">
+        <li><b>📲</b><span>Tap one chip a day. No skipping ahead, Plop is watching.</span></li>
+        <li><b>🐦</b><span>Sundays are pigeon game days.</span></li>
+        <li><b>⭐</b><span>Every door gives you a Plop sticker. Collect all 24.</span></li>
+        <li><b>💌</b><span>The green button at the bottom sends your answers straight to me.</span></li>
+        <li><b>🏠</b><span>"See all doors" takes you back to every day you've opened.</span></li>
+      </ul>
+      <button class="btn gift-btn" id="gift-btn">Plop has a gift for you 🎁</button>
+    </div>
+
+    <div class="envelope" id="envelope">
+      <div class="letter">
+        <p>For the person I'd tell every idea to first.</p>
+        <p>Use it wisely. Or don't.</p>
+        <p><b>1 month of Claude Pro</b>, with all my love!</p>
+        <p class="sig">— Sofi</p>
+      </div>
+
+      <div class="code-box">
+        <small>APPLE GIFT CARD</small>
+        <div class="code" id="code"></div>
+      </div>
+      <button class="btn" id="copy">Copy code</button>
+
+      <div class="steps">
+        <h3>How to use it</h3>
+        <ol>
+          <li>Open the <b>App Store</b>, tap your profile picture, then <b>Redeem Gift Card or Code</b>, and paste the code.</li>
+          <li>Open the <b>Claude</b> app, tap your initials, then <b>Upgrade to Pro</b>. It's paid from your gift balance.</li>
+          <li>It renews monthly. If you don't want to keep it, cancel in Settings → your name → Subscriptions before the month ends.</li>
+        </ol>
+      </div>
     </div>
     <!-- ===== end of day 1 content ===== -->
   </main>
@@ -24,6 +81,29 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+  // the code is lightly scrambled so it isn't readable in the page source
+  const CODE = atob('WDRES0dMUlhLQ1I2SFdNSg==');
+
+  const openGift = () => {
+    document.getElementById('gift-btn').classList.add('hidden');
+    document.getElementById('code').textContent = CODE;
+    document.getElementById('envelope').classList.add('open');
+    store.set('gift-open', true);
+  };
+  document.getElementById('gift-btn').onclick = () => {
+    openGift();
+    toast(`<div class="plop-xs">${plopSVG({ outfit: '#E9B84A' })}</div><div><b>Surprise!</b><br>Plop delivered it.</div>`);
+    document.getElementById('envelope').scrollIntoView({ behavior: 'smooth' });
+  };
+  if (store.get('gift-open', false)) openGift();
+
+  document.getElementById('copy').onclick = async e => {
+    try { await navigator.clipboard.writeText(CODE); e.target.textContent = 'Copied!'; }
+    catch (err) { prompt('Copy this code:', CODE); }
+    setTimeout(() => e.target.textContent = 'Copy code', 1600);
+  };
+</script>
 </body>
 </html>

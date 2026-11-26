@@ -2,21 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 6</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { padding: 10px; }
+  .hud { display: flex; justify-content: space-between; align-items: center; font-size: 18px; margin: 0 4px 8px; }
+  .hud b { font-size: 24px; }
+  .game { position: relative; border: 4px solid var(--ink); background: #EAF2F7; touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; width: 100%; image-rendering: pixelated; }
+  .overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(43, 34, 56, .78); color: var(--cream); text-align: center; padding: 20px;
+  }
+  .overlay h2 { font-size: 30px; margin: 0 0 6px; color: var(--gold); }
+  .overlay p { margin: 0 0 12px; font-size: 18px; }
+  .overlay .plop-md { width: 120px; margin-bottom: 6px; }
+  .overlay .btn { max-width: 240px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .pad button {
+    font-family: inherit; font-size: 26px; padding: 10px 0; background: var(--cream); color: var(--ink);
+    border: 4px solid var(--ink); box-shadow: 0 4px 0 var(--ink); touch-action: manipulation;
+  }
+  .pad button:active { transform: translateY(4px); box-shadow: none; }
+  .pad .up { grid-column: 2; background: var(--gold); }
+  .pad .left { grid-column: 1; grid-row: 2; }
+  .pad .down { grid-column: 2; grid-row: 2; }
+  .pad .right { grid-column: 3; grid-row: 2; }
+  .tip { text-align: center; font-size: 15px; opacity: .7; margin: 10px 0 0; }
+</style>
 </head>
 <body data-day="6">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 6: Pigeon Crossy Road — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Pigeon Crossy Road</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 6: Pigeon Crossy Road ===== -->
+    <div class="hud"><span>Score <b id="score">0</b></span><span>🍞 <b id="crumbs">0</b></span><span>Best <b id="best">0</b></span></div>
+    <div class="game" id="game">
+      <canvas id="cv"></canvas>
+      <div class="overlay" id="overlay"></div>
     </div>
+    <div class="pad">
+      <button class="up" data-d="up" aria-label="Hop forward">▲</button>
+      <button class="left" data-d="left" aria-label="Hop left">◀</button>
+      <button class="down" data-d="down" aria-label="Hop back">▼</button>
+      <button class="right" data-d="right" aria-label="Hop right">▶</button>
+    </div>
+    <p class="tip">Tap the game to hop forward · swipe to steer</p>
     <!-- ===== end of day 6 content ===== -->
   </main>
 
@@ -24,6 +58,354 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+initDay();
+
+(() => {
+  const COLS = 9;
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  let T, W, H, VIS;
+
+  function resize() {
+    const w = cv.parentElement.clientWidth;
+    T = Math.floor(w / COLS);
+    W = T * COLS; H = T * 12; VIS = 14;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  // ---------- Plop sprite (pre-rendered) ----------
+  function spriteCanvas(outfit, flip, squash) {
+    const c = document.createElement('canvas'); c.width = 34; c.height = 33;
+    const x = c.getContext('2d');
+    const pal = Object.assign({}, PLOP_PALETTE, { R: outfit });
+    const sh = (h, f) => _shade(h, f);
+    const col = ch => ch === 'r' ? sh(pal.R, .76) : ch === 'g' ? sh(pal.G, .85) : ch === 'd' ? sh(pal.G, .66) : ch === 'L' ? sh(pal.G, 1.18) : pal[ch];
+    PLOP_SPRITE.forEach((row, y) => {
+      for (let i = 0; i < row.length; i++) {
+        let ch = row[i]; if (ch === '.') continue;
+        if (squash && y >= 11 && y <= 14 && i >= 7 && i <= 10) ch = (y === 12 || y === 13) ? 'K' : 'G';
+        x.fillStyle = col(ch); x.fillRect(flip ? 33 - i : i, y, 1, 1);
+      }
+    });
+    return c;
+  }
+  const SPR = { left: spriteCanvas('#E9B84A', false), right: spriteCanvas('#E9B84A', true),
+                deadL: spriteCanvas('#E9B84A', false, true), deadR: spriteCanvas('#E9B84A', true, true) };
+
+  // ---------- world ----------
+  let rows, player, cam, score, crumbs, state, facing, shake, lastMove, deathMsg;
+  const best = () => getBest('crossy') || 0;
+
+  const CAR_COLORS = ['#B5473A', '#3E6F9E', '#E9B84A', '#4F7A55', '#8C6FA8', '#F3E6CF', '#E07A5F'];
+
+  function makeRow(r) {
+    const diff = Math.min(1, r / 120);
+    if (r < 3) return { type: 'snow', block: new Set(), crumb: r === 2 ? 4 : -1, cars: [] };
+    const prev = rows[r - 1];
+    let t = Math.random();
+    let type;
+    const runOfTraffic = [1, 2, 3].filter(k => rows[r - k] && rows[r - k].type !== 'snow').length;
+    if (runOfTraffic >= 3 - Math.floor(diff * 2)) type = 'snow';
+    else if (t < .40 - diff * .15) type = 'snow';
+    else if (t < .76) type = 'road';
+    else if (t < .88 && !(prev && prev.type === 'tram')) type = 'tram';
+    else type = 'bike';
+    const row = { type, block: new Set(), crumb: -1, cars: [] };
+    if (type === 'snow') {
+      const n = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) { const c = Math.floor(Math.random() * COLS); if (c !== player?.col) row.block.add(c); }
+      row.deco = [...row.block].map(c => ({ c, kind: Math.random() < .6 ? 'tree' : 'snowman' }));
+      if (Math.random() < .35) { let c; do { c = Math.floor(Math.random() * COLS); } while (row.block.has(c)); row.crumb = c; }
+      return row;
+    }
+    row.dir = Math.random() < .5 ? 1 : -1;
+    if (type === 'road') {
+      row.fiaker = Math.random() < .2;
+      row.speed = row.fiaker ? 0.9 + diff * .5 : 1.4 + Math.random() * 1.6 + diff * 1.8;
+      row.gap = row.fiaker ? [3.5, 6] : [2.4, 5];
+    } else if (type === 'tram') {
+      row.speed = 4 + diff * 2.5; row.gap = [9, 15];
+    } else {
+      row.speed = 3.4 + Math.random() * 1.5 + diff * 2; row.gap = [2.5, 6];
+    }
+    if (Math.random() < .2) row.crumb = Math.floor(Math.random() * COLS);
+    // pre-fill lane
+    let x = -3 + Math.random() * 3;
+    while (x < COLS + 3) { row.cars.push(newCar(row, x)); x += carLen(row) + rnd(row.gap); }
+    row.nextGap = rnd(row.gap);
+    return row;
+  }
+  const rnd = ([a, b]) => a + Math.random() * (b - a);
+  const carLen = row => row.type === 'tram' ? 3.6 : row.type === 'bike' ? .7 : row.fiaker ? 2.2 : 1.4;
+  function newCar(row, x) {
+    return { x, len: carLen(row), color: CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)] };
+  }
+  function getRow(r) { while (rows.length <= r) rows.push(makeRow(rows.length)); return rows[r]; }
+
+  function reset() {
+    rows = []; player = { col: 4, row: 0, fromCol: 4, fromRow: 0, t: 1 };
+    for (let r = 0; r < 20; r++) getRow(r);
+    cam = -3; score = 0; crumbs = 0; facing = 'left'; shake = 0; lastMove = performance.now();
+    updateHud();
+  }
+
+  function updateHud() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('crumbs').textContent = crumbs;
+    document.getElementById('best').textContent = Math.max(best(), score);
+  }
+
+  // ---------- input ----------
+  function move(d) {
+    if (state === 'ready') { start(); if (d !== 'up') return; }
+    if (state !== 'play' || player.t < 1) return;
+    let { col, row } = player;
+    if (d === 'up') row++;
+    if (d === 'down') row--;
+    if (d === 'left') { col--; facing = 'left'; }
+    if (d === 'right') { col++; facing = 'right'; }
+    if (col < 0 || col >= COLS || row < 0 || row < Math.floor(cam) + 1) return;
+    if (getRow(row).block.has(col)) return;
+    player.fromCol = player.col; player.fromRow = player.row;
+    player.col = col; player.row = row; player.t = 0;
+    lastMove = performance.now();
+    if (row > score) { score = row; updateHud(); }
+    const rr = getRow(row);
+    if (rr.crumb === col) { rr.crumb = -1; crumbs++; updateHud(); }
+  }
+
+  document.querySelectorAll('.pad button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); move(b.dataset.d); }));
+  addEventListener('keydown', e => {
+    const k = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'up' }[e.key];
+    if (k) { e.preventDefault(); move(k); }
+  });
+  let sx, sy;
+  const game = document.getElementById('game');
+  game.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+  game.addEventListener('touchend', e => {
+    if (e.target.closest('.overlay .btn')) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    e.preventDefault();
+    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return move('up');
+    if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left'); else move(dy > 0 ? 'down' : 'up');
+  }, { passive: false });
+  game.addEventListener('click', e => { if (!('ontouchstart' in window) && !e.target.closest('.overlay .btn')) move('up'); });
+
+  // ---------- game flow ----------
+  function showReady() {
+    state = 'ready';
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `<div class="plop-md" id="ov-plop"></div><h2>Crossy Plop</h2>
+      <p>Get Plop across Vienna.<br>Dodge cars, trams, Fiakers<br>and e-scooter warriors.<br>Grab the bread 🍞</p>
+      <button class="btn" id="go">Start</button>`;
+    mountPlop(document.getElementById('ov-plop'), { outfit: '#E9B84A' });
+    document.getElementById('go').onclick = e => { e.stopPropagation(); start(); };
+  }
+  function start() { reset(); state = 'play'; overlay.style.display = 'none'; }
+
+  const DEATHS = {
+    road: ['Plop got hit by a car. Rude.', 'Splat. Plop is now a pancake.', 'That driver didn\'t even stop.'],
+    fiaker: ['Plop got Fiaker\'d. Very Viennese way to go.', 'Trampled by a tourist horse. Iconic.'],
+    tram: ['Plop was flattened by the 49 tram.', 'The tram always wins.', 'Wiener Linien: 1, Plop: 0'],
+    bike: ['An e-scooter warrior took Plop out.', 'Hit by a scooter going 40 on the bike lane. Classic.'],
+    cam: ['Plop took too long and got left behind.', 'Too slow! Plop fell asleep in the snow.']
+  };
+  function die(kind) {
+    if (state !== 'play') return;
+    state = 'dead'; shake = 12;
+    const list = DEATHS[kind]; deathMsg = list[Math.floor(Math.random() * list.length)];
+    const isBest = saveBest('crossy', score);
+    updateHud();
+    setTimeout(() => {
+      overlay.style.display = 'flex';
+      overlay.innerHTML = `<h2>SPLAT!</h2><p>${deathMsg}</p>
+        <p style="font-size:26px;margin:4px 0">Score: <b>${score}</b> · 🍞 ${crumbs}</p>
+        <p>${isBest && score > 0 ? '⭐ New best! ⭐' : 'Best: ' + best()}</p>
+        <button class="btn" id="again">Try again</button>
+        <a class="btn btn-reply" target="_blank" rel="noopener" href="${whatsappLink('Day 6: I got ' + score + ' in Crossy Plop (' + crumbs + ' bread). ' + deathMsg)}">Brag to Sofi</a>`;
+      document.getElementById('again').onclick = e => { e.stopPropagation(); start(); };
+    }, 700);
+  }
+
+  // ---------- update ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    if (state === 'play' || state === 'dead') update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  function update(dt) {
+    for (let r = Math.floor(cam) - 1; r < Math.floor(cam) + VIS + 2; r++) {
+      if (r < 0) continue;
+      const row = getRow(r);
+      if (!row.cars.length && row.type === 'snow') continue;
+      row.cars.forEach(c => c.x += row.dir * row.speed * dt);
+      row.cars = row.cars.filter(c => c.x > -24 && c.x < COLS + 24);
+      // spawn
+      const edge = row.dir > 0 ? Math.min(...row.cars.map(c => c.x), 99) : Math.max(...row.cars.map(c => c.x + c.len), -99);
+      if (row.dir > 0 && edge > -carLen(row) + row.nextGap - 1) { row.cars.push(newCar(row, edge - carLen(row) - row.nextGap)); row.nextGap = rnd(row.gap); }
+      if (row.dir < 0 && edge < COLS + 1 - row.nextGap + 1) { row.cars.push(newCar(row, edge + row.nextGap)); row.nextGap = rnd(row.gap); }
+    }
+    if (state !== 'play') { shake = Math.max(0, shake - dt * 40); return; }
+
+    player.t = Math.min(1, player.t + dt * 9);
+
+    // camera: follow player, plus slow creep so you can't wait forever
+    const target = player.row - 3;
+    cam += (target - cam) * Math.min(1, dt * 5);
+    if (score > 3) cam += dt * (0.25 + Math.min(.45, score / 300));
+    if (player.row < cam + 0.2) return die('cam');
+
+    // collisions
+    const pr = player.t < .5 ? player.fromRow : player.row;
+    const pc = player.fromCol + (player.col - player.fromCol) * player.t;
+    const row = getRow(pr);
+    if (row.type !== 'snow') {
+      for (const c of row.cars) {
+        if (pc + .78 > c.x && pc + .22 < c.x + c.len) {
+          return die(row.type === 'road' ? (row.fiaker ? 'fiaker' : 'road') : row.type);
+        }
+      }
+    }
+  }
+
+  // ---------- drawing ----------
+  const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); };
+  const rowY = r => H - (r - cam + 1) * T;
+
+  function drawRow(r) {
+    const row = getRow(r), y = rowY(r);
+    if (row.type === 'snow') {
+      for (let c = 0; c < COLS; c++) px(c * T, y, T, T, (c + r) % 2 ? '#F4F8FB' : '#E6EEF4');
+      for (let i = 0; i < 4; i++) px(((r * 37 + i * 53) % COLS) * T + (i * 7 % T), y + (i * 11 % T), 3, 3, '#CFDCE6');
+    } else if (row.type === 'road' || row.type === 'tram') {
+      px(0, y, W, T, '#5D5A66');
+      if (row.type === 'tram') {
+        px(0, y + T * .3, W, 3, '#A8A4B0'); px(0, y + T * .7, W, 3, '#A8A4B0');
+        for (let x = 0; x < W; x += T / 2) px(x, y + T * .3, 4, T * .4 + 3, '#7A7684');
+      } else {
+        const nxt = getRow(r + 1);
+        if (nxt.type === 'road') for (let x = T * .2; x < W; x += T) px(x, y - 2, T * .5, 4, '#F3E6CF');
+      }
+    } else {
+      px(0, y, W, T, '#A55A4A');
+      px(0, y, W, 3, '#F3E6CF'); px(0, y + T - 3, W, 3, '#F3E6CF');
+      for (let x = T * 1.5; x < W; x += T * 3) { ctx.font = `${T * .45}px sans-serif`; ctx.globalAlpha = .35; ctx.fillText('🚲', x, y + T * .68); ctx.globalAlpha = 1; }
+    }
+  }
+
+  function drawDeco(r) {
+    const row = getRow(r), y = rowY(r);
+    (row.deco || []).forEach(({ c, kind }) => {
+      const x = c * T;
+      if (kind === 'tree') {
+        px(x + T * .42, y + T * .72, T * .16, T * .22, '#7A4A2A');
+        px(x + T * .18, y + T * .52, T * .64, T * .22, '#3F6B45');
+        px(x + T * .26, y + T * .32, T * .48, T * .22, '#4F7A55');
+        px(x + T * .36, y + T * .12, T * .28, T * .22, '#5E8B62');
+        px(x + T * .44, y + T * .04, T * .12, T * .1, '#E9B84A');
+        px(x + T * .3, y + T * .58, 4, 4, '#B5473A'); px(x + T * .62, y + T * .4, 4, 4, '#E9B84A');
+      } else {
+        px(x + T * .24, y + T * .5, T * .52, T * .42, '#FFFFFF');
+        px(x + T * .32, y + T * .2, T * .36, T * .32, '#FFFFFF');
+        px(x + T * .3, y + T * .14, T * .4, T * .08, '#3A2A20');
+        px(x + T * .36, y + T * .02, T * .28, T * .13, '#3A2A20');
+        px(x + T * .4, y + T * .3, 3, 3, '#3A2A20'); px(x + T * .56, y + T * .3, 3, 3, '#3A2A20');
+        px(x + T * .47, y + T * .37, T * .14, 3, '#E07A5F');
+        px(x + T * .3, y + T * .5, T * .4, T * .07, '#B5473A');
+      }
+    });
+    if (row.crumb >= 0) {
+      const x = row.crumb * T, bob = Math.sin(performance.now() / 200 + r) * 2;
+      px(x + T * .3, y + T * .42 + bob, T * .4, T * .22, '#D9A066');
+      px(x + T * .34, y + T * .38 + bob, T * .32, T * .08, '#E9C48A');
+      px(x + T * .3, y + T * .42 + bob, T * .4, 2, '#3A2A20');
+    }
+  }
+
+  function drawCar(row, c, y) {
+    const x = c.x * T, L = c.len * T, f = row.dir > 0;
+    if (row.type === 'tram') {
+      px(x, y + T * .1, L, T * .8, '#C8102E');
+      px(x, y + T * .5, L, T * .14, '#FFFFFF');
+      for (let i = x + T * .25; i < x + L - T * .4; i += T * .55) px(i, y + T * .2, T * .35, T * .24, '#BFE0F0');
+      px(x, y + T * .1, L, 3, '#3A2A20'); px(x, y + T * .87, L, 3, '#3A2A20');
+      px(x + L / 2 - 2, y - T * .05, 4, T * .15, '#3A2A20');
+    } else if (row.type === 'bike') {
+      px(x, y + T * .78, L, 4, '#3A2A20');
+      px(x + (f ? L * .8 : L * .1), y + T * .3, 4, T * .5, '#3A2A20');
+      px(x + L * .1, y + T * .72, 7, 7, '#222'); px(x + L * .75, y + T * .72, 7, 7, '#222');
+      px(x + L * .3, y + T * .2, T * .24, T * .36, '#3E6F9E');
+      px(x + L * .32, y + T * .04, T * .2, T * .18, '#F0C8A0');
+      px(x + L * .3, y + T * .0, T * .24, T * .08, '#3A2A20');
+    } else if (row.fiaker) {
+      const hx = f ? x + L - T * .9 : x, cx = f ? x : x + T * .8;
+      px(hx, y + T * .35, T * .9, T * .35, '#F3E6CF'); px(hx + (f ? T * .7 : 0), y + T * .15, T * .22, T * .3, '#F3E6CF');
+      px(hx + T * .1, y + T * .7, 4, T * .22, '#3A2A20'); px(hx + T * .7, y + T * .7, 4, T * .22, '#3A2A20');
+      px(cx, y + T * .15, T * 1.4, T * .6, '#2B2238'); px(cx + T * .1, y + T * .22, T * .45, T * .25, '#BFE0F0');
+      px(cx + T * .2, y + T * .7, T * .26, T * .26, '#B9824F'); px(cx + T * .95, y + T * .7, T * .26, T * .26, '#B9824F');
+      px(cx + T * .8, y + T * .02, T * .3, T * .16, '#3A2A20');
+    } else {
+      px(x, y + T * .3, L, T * .45, c.color);
+      px(x + L * .2, y + T * .1, L * .6, T * .26, c.color);
+      px(x + L * (f ? .52 : .24), y + T * .14, L * .22, T * .18, '#BFE0F0');
+      px(x + L * (f ? .26 : .5), y + T * .14, L * .22, T * .18, '#BFE0F0');
+      px(x + L * .12, y + T * .68, T * .26, T * .26, '#2A2230'); px(x + L * .68, y + T * .68, T * .26, T * .26, '#2A2230');
+      px(f ? x + L - 4 : x, y + T * .38, 4, 5, '#F6E27A');
+      px(x, y + T * .3, L, 2, 'rgba(0,0,0,.25)');
+    }
+  }
+
+  function draw() {
+    ctx.save();
+    if (shake > 0) ctx.translate((Math.random() - .5) * shake, (Math.random() - .5) * shake);
+    px(0, 0, W, H, '#EAF2F7');
+    const r0 = Math.max(0, Math.floor(cam) - 1), r1 = Math.floor(cam) + VIS;
+    for (let r = r0; r < r1; r++) drawRow(r);
+    for (let r = r1 - 1; r >= r0; r--) {
+      drawDeco(r);
+      const row = getRow(r);
+      if (row.type !== 'snow') row.cars.forEach(c => drawCar(row, c, rowY(r)));
+      if (player && (player.t < .5 ? player.fromRow : player.row) === r) drawPlop();
+    }
+    // falling snow
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    const tt = performance.now() / 1000;
+    for (let i = 0; i < 26; i++) { const sx = (i * 97 + tt * 14 * (1 + i % 3)) % W, sy = (i * 61 + tt * 38 * (1 + i % 2)) % H; ctx.fillRect(sx, sy, 3, 3); }
+    ctx.restore();
+  }
+
+  function drawPlop() {
+    const t = player.t;
+    const cx = player.fromCol + (player.col - player.fromCol) * t;
+    const cr = player.fromRow + (player.row - player.fromRow) * t;
+    const hop = Math.sin(Math.PI * t) * T * .35;
+    const s = T * 1.08;
+    const x = cx * T + (T - s) / 2, y = H - (cr - cam + 1) * T + (T - s) - hop - T * .04;
+    const dead = state === 'dead';
+    ctx.fillStyle = 'rgba(58,42,32,.18)';
+    ctx.fillRect(x + s * .2, H - (cr - cam + 1) * T + T * .88, s * .6, T * .1);
+    const img = dead ? (facing === 'left' ? SPR.deadL : SPR.deadR) : (facing === 'left' ? SPR.left : SPR.right);
+    if (dead) ctx.drawImage(img, x - s * .1, y + s * .45, s * 1.2, s * .55);
+    else ctx.drawImage(img, x, y, s, s);
+  }
+
+  // ---------- go ----------
+  resize();
+  reset();
+  showReady();
+  updateHud();
+  addEventListener('resize', () => { resize(); });
+  requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>

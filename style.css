@@ -48,6 +48,7 @@ h1 { font-weight: 600; }
 .hero { text-align: center; padding-top: 22px; }
 .hero .plop-lg { width: 190px; margin: 0 auto; animation: bob 1.2s steps(2) infinite; }
 .hero h1 { font-size: 34px; margin: 6px 0 0; letter-spacing: 1px; }
+.hero .for { margin: 0; font-size: 20px; color: var(--red); }
 .hero #sub { margin: 2px 0 0; font-family: 'VT323', monospace; font-size: 22px; }
 
 .roof {

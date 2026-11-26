@@ -1,6 +1,6 @@
 // ============ SETTINGS (edit these) ============
 const SETTINGS = {
-  friendName: 'bestie',          // shown in greetings
+  friendName: 'Del',             // shown in greetings
   fromName: 'Sofi',
   whatsapp: '',                  // your number for replies, international format without + or spaces, e.g. '4366012345678'
   year: 2026,
@@ -17,7 +17,7 @@ const DAYS = [
   { n: 4,  slug: '6q6h7', title: 'A playlist for you',        outfit: '#8C6FA8', sticker: 'DJ Plop' },
   { n: 5,  slug: '7qbpw', title: 'Your birth chart',          outfit: '#2F3A66', sticker: 'Cosmic Plop' },
   { n: 6,  slug: '7yjxp', title: 'Pigeon Crossy Road',        outfit: '#E9B84A', sticker: 'Road Plop' },
-  { n: 7,  slug: '8chem', title: 'A coupon',                  outfit: '#C98A5A', sticker: 'Latte Plop' },
+  { n: 7,  slug: '8chem', title: 'Build your yacht',          outfit: '#1F4E79', sticker: 'Captain Plop' },
   { n: 8,  slug: '8k8rb', title: 'Puzzle day',                outfit: '#6E8B3D', sticker: 'Thinking Plop' },
   { n: 9,  slug: '8myyp', title: 'Moodboard',                 outfit: '#D98BA6', sticker: 'Aesthetic Plop' },
   { n: 10, slug: '97b5r', title: 'Guess who texted this',     outfit: '#4A4A58', sticker: 'Detective Plop' },
@@ -28,8 +28,8 @@ const DAYS = [
   { n: 15, slug: 'hmdw5', title: 'The friendship awards',     outfit: '#D4A017', sticker: 'Award Plop' },
   { n: 16, slug: 'jk96f', title: 'Plop Casino',               outfit: '#1F6B4A', sticker: 'High-roller Plop' },
   { n: 17, slug: 'jp8rw', title: 'Plopdle',                   outfit: '#6AAA64', sticker: 'Wordle Plop' },
-  { n: 18, slug: 'k4f6u', title: 'Our timeline',              outfit: '#A0522D', sticker: 'Memory Plop' },
-  { n: 19, slug: 'mfksd', title: 'Remember when…',            outfit: '#C9A0DC', sticker: 'Nostalgic Plop' },
+  { n: 18, slug: 'k4f6u', title: 'Diagnose the patient',      outfit: '#5FA8A0', sticker: 'Dr. Plop' },
+  { n: 19, slug: 'mfksd', title: 'Remember when…',            outfit: '#A0522D', sticker: 'Memory Plop' },
   { n: 20, slug: 'ura22', title: 'Spot the pigeon',           outfit: '#3E7CB1', sticker: 'Hidden Plop' },
   { n: 21, slug: 'vmtgm', title: 'Inside jokes dictionary',   outfit: '#F28C28', sticker: 'Scholar Plop' },
   { n: 22, slug: 'vvdtn', title: 'Things I love about you',   outfit: '#E05A7A', sticker: 'Heart Plop' },
@@ -153,6 +153,7 @@ function initArchive() {
   const today = todayNumber();
   const got = opened();
   mountPlop(document.getElementById('plop-hero'), { outfit: '#B5473A' });
+  document.getElementById('fname').textContent = SETTINGS.friendName;
 
   const sub = document.getElementById('sub');
   if (today === 0) sub.textContent = 'The first door opens on 1 December';

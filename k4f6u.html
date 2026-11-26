@@ -6,17 +6,56 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 18</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #content { background: #DCEFEA; }
+  .clip {
+    position: relative; background: #fff; border: 4px solid var(--ink); padding: 26px 14px 14px; margin-top: 18px;
+  }
+  .clip::before {
+    content: ''; position: absolute; left: 50%; top: -18px; transform: translateX(-50%);
+    width: 92px; height: 26px; background: #9AA3A8; border: 4px solid var(--ink);
+  }
+  .meta { display: flex; justify-content: space-between; font-family: 'VT323', monospace; font-size: 19px; opacity: .7; }
+  .pname { font-size: 30px; font-weight: 600; margin: 4px 0 0; line-height: 1.1; }
+  .psub { font-family: 'VT323', monospace; font-size: 21px; color: var(--red); margin: 0 0 10px; }
+  .label { font-size: 14px; letter-spacing: 1px; opacity: .6; margin: 12px 0 6px; }
+  .symptoms { list-style: none; padding: 0; margin: 0; }
+  .symptoms li { padding: 6px 0 6px 26px; position: relative; border-bottom: 2px dashed #d5d5d5; font-size: 17px; }
+  .symptoms li::before { content: ''; position: absolute; left: 2px; top: 11px; width: 12px; height: 12px; background: var(--red); border: 2px solid var(--ink); }
+  .dx { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: inherit; font-size: 16px; color: var(--ink); background: var(--cream);
+    border: 3px solid var(--ink); padding: 6px 10px; cursor: pointer;
+  }
+  .chip.on { background: var(--red); color: var(--cream); }
+  .chip.all { background: var(--gold); }
+  .chip.all.on { background: var(--ink); color: var(--gold); }
+  .err { color: var(--red); font-size: 15px; min-height: 20px; margin: 6px 0 0; }
+  .stamp {
+    display: none; margin: 14px auto 0; text-align: center; border: 4px solid var(--red); color: var(--red);
+    padding: 8px 10px; transform: rotate(-4deg); font-weight: 600; font-size: 18px; background: #fff5f3;
+  }
+  .stamp.show { display: block; animation: slam .3s steps(3); }
+  .stamp small { display: block; font-size: 13px; letter-spacing: 2px; }
+  .drnote { display: none; gap: 10px; align-items: center; margin-top: 14px; background: var(--cream); border: 3px solid var(--ink); padding: 8px; font-size: 16px; }
+  .drnote.show { display: flex; }
+  .drnote .plop-xs { width: 56px; }
+  .nav { margin-top: 14px; }
+  .report-row { background: #fff; border: 3px solid var(--ink); padding: 10px 12px; margin-bottom: 10px; }
+  .report-row b { font-size: 20px; }
+  .report-row span { display: block; color: var(--red); font-size: 16px; }
+  .intro { text-align: center; margin: 0; }
+  @keyframes slam { 0% { transform: rotate(-4deg) scale(2.2); opacity: 0; } 100% { transform: rotate(-4deg) scale(1); opacity: 1; } }
+</style>
 </head>
 <body data-day="18">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 18: Our timeline — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Our timeline</h2>
-      <p class="muted">Coming soon…</p>
-    </div>
+    <!-- ===== DAY 18: Diagnose the patient ===== -->
+    <p class="intro" id="intro">Dr. Plop's clinic is open. Read each chart, pick the diagnosis (or several), and stamp it.</p>
+    <div id="stage"></div>
     <!-- ===== end of day 18 content ===== -->
   </main>
 
@@ -24,6 +63,151 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- edit the patients here ----
+  const PATIENTS = [
+    {
+      name: 'The Devil', sub: 'gemini btw',
+      symptoms: [
+        'manipulative',
+        'ends every argument with "relax, I was joking" (he was not joking)',
+        'rewrites history in real time',
+        'has never said sorry, only "okay but you also…"',
+        'mirror selfie in every story',
+        "can't drive",
+        'genuinely believes he could beat a bear in a fight',
+        'says "trust me" right before something terrible happens'
+      ],
+      options: ['Schizo', 'Autistic', 'Diabetes', 'Chechen personality disorder'],
+      allOfAbove: false,
+      note: 'Dr. Plop recommends a safe distance of at least 3 metres. Never lend him your charger.'
+    },
+    {
+      name: 'Anonymous', sub: '',
+      symptoms: [
+        "can't get drunk or high (usually) *cough cough*",
+        'difficulty paying attention',
+        'semi-organised',
+        'hears voices sometimes',
+        'mood swings'
+      ],
+      options: ['ADHD', 'Autism', 'Schizophrenia', 'Bipolar'],
+      allOfAbove: true,
+      note: 'Dr. Plop prescribes water, a planner, and fewer "just one more"s.'
+    },
+    {
+      name: 'Psycho', sub: '(bangs)',
+      symptoms: [
+        'makes up fake memories',
+        'victim complex',
+        'turns people against you',
+        'ugly hair'
+      ],
+      options: ['Schizo', 'Bitch syndrome', 'Narcissistic personality disorder', 'BPD'],
+      allOfAbove: false,
+      note: 'Dr. Plop prescribes a haircut. Urgently.'
+    },
+    {
+      name: 'The Twin', sub: '',
+      symptoms: [
+        'aura maxxing',
+        'e-scooter warrior',
+        'has a bitchy girlfriend'
+      ],
+      options: ['Dubai chocolate', 'Stockholm syndrome', 'Looksmaxxing', 'Sydney Sweeney'],
+      allOfAbove: false,
+      note: 'Dr. Plop prescribes getting off the e-scooter and touching grass.'
+    }
+  ];
+
+  const results = [];
+  let idx = 0;
+  const stage = document.getElementById('stage');
+
+  function showPatient() {
+    const p = PATIENTS[idx];
+    const picked = new Set();
+    stage.innerHTML = `
+      <div class="clip">
+        <div class="meta"><span>PATIENT ${idx + 1}/${PATIENTS.length}</span><span>DR. PLOP</span></div>
+        <div class="pname">${p.name}</div>
+        <div class="psub">${p.sub || '&nbsp;'}</div>
+        <div class="label">SYMPTOMS</div>
+        <ul class="symptoms">${p.symptoms.map(s => `<li>${s}</li>`).join('')}</ul>
+        <div class="label">DIAGNOSIS (pick one or more)</div>
+        <div class="dx" id="dx"></div>
+        <div class="err" id="err"></div>
+        <button class="btn" id="stampBtn">Stamp diagnosis</button>
+        <div class="stamp" id="stamp"></div>
+        <div class="drnote" id="note"><div class="plop-xs">${plopSVG({ outfit: '#5FA8A0' })}</div><div>${p.note}</div></div>
+      </div>
+      <div class="nav"><button class="btn btn-reply hidden" id="next">${idx < PATIENTS.length - 1 ? 'Next patient →' : 'See the medical report'}</button></div>`;
+
+    const dx = document.getElementById('dx');
+    const err = document.getElementById('err');
+    const chips = [];
+    p.options.forEach(o => {
+      const c = document.createElement('button');
+      c.className = 'chip'; c.textContent = o;
+      c.onclick = () => {
+        picked.has(o) ? picked.delete(o) : picked.add(o);
+        c.classList.toggle('on'); err.textContent = '';
+        if (allChip) allChip.classList.toggle('on', picked.size === p.options.length);
+      };
+      chips.push(c); dx.appendChild(c);
+    });
+    let allChip = null;
+    if (p.allOfAbove) {
+      allChip = document.createElement('button');
+      allChip.className = 'chip all'; allChip.textContent = 'All of the above';
+      allChip.onclick = () => {
+        const turnOn = picked.size !== p.options.length;
+        picked.clear();
+        if (turnOn) p.options.forEach(o => picked.add(o));
+        chips.forEach(c => c.classList.toggle('on', turnOn));
+        allChip.classList.toggle('on', turnOn); err.textContent = '';
+      };
+      dx.appendChild(allChip);
+    }
+
+    document.getElementById('stampBtn').onclick = e => {
+      if (!picked.size) { err.textContent = 'Dr. Plop needs at least one diagnosis'; return; }
+      const list = p.options.filter(o => picked.has(o));
+      const label = (p.allOfAbove && list.length === p.options.length) ? 'ALL OF THE ABOVE' : list.join(' + ').toUpperCase();
+      const st = document.getElementById('stamp');
+      st.innerHTML = `<small>DIAGNOSED</small>${label}`;
+      st.classList.add('show');
+      document.getElementById('note').classList.add('show');
+      e.target.classList.add('hidden');
+      dx.querySelectorAll('.chip').forEach(c => c.disabled = true);
+      results[idx] = { name: p.name, label };
+      document.getElementById('next').classList.remove('hidden');
+    };
+    document.getElementById('next').onclick = () => {
+      idx++;
+      idx < PATIENTS.length ? showPatient() : showReport();
+      document.getElementById('content').scrollIntoView({ behavior: 'smooth' });
+    };
+  }
+
+  function showReport() {
+    document.getElementById('intro').textContent = "Dr. Plop's official medical report";
+    const text = results.map(r => `${r.name}: ${r.label}`).join('\n');
+    stage.innerHTML = `
+      <div class="clip">
+        <div class="meta"><span>FINAL REPORT</span><span>18.12</span></div>
+        ${results.map(r => `<div class="report-row"><b>${r.name}</b><span>${r.label}</span></div>`).join('')}
+        <div class="drnote show"><div class="plop-xs">${plopSVG({ outfit: '#5FA8A0' })}</div><div>All patients have been diagnosed. Dr. Plop is not a real doctor and takes no further questions.</div></div>
+      </div>
+      <div class="nav">
+        <a class="btn btn-reply" href="${whatsappLink('Day 18, my diagnoses:\n' + text)}" target="_blank" rel="noopener">Send diagnoses to Sofi</a>
+        <button class="btn" onclick="location.reload()">Diagnose again</button>
+      </div>`;
+  }
+
+  showPatient();
+</script>
 </body>
 </html>

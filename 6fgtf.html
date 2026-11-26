@@ -6,16 +6,51 @@
 <meta name="theme-color" content="#2B2238">
 <title>Plop&#39;s Advent · Day 3</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  .intro { text-align: center; margin: 0 0 14px; }
+  .passport { display: grid; gap: 12px; }
+  .trip {
+    position: relative; display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center;
+    background: var(--cream); border: 3px solid var(--ink); padding: 10px 12px; cursor: pointer; text-align: left;
+    font-family: inherit; color: var(--ink); width: 100%;
+  }
+  .trip .flag { font-size: 38px; line-height: 1; text-align: center; }
+  .trip b { display: block; font-size: 22px; }
+  .trip i { font-style: normal; font-family: 'VT323', monospace; font-size: 20px; opacity: .8; }
+  .trip .mine { font-size: 13px; color: var(--pine); }
+  .stamp {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%) rotate(-14deg) scale(0);
+    border: 3px solid var(--red); color: var(--red); padding: 2px 8px; font-weight: 600; font-size: 16px;
+    background: rgba(255, 248, 236, .85); transition: transform .25s steps(3); pointer-events: none;
+  }
+  .trip.stamped .stamp { transform: translateY(-50%) rotate(-14deg) scale(1); }
+  .add { margin-top: 18px; padding-top: 14px; border-top: 3px dashed rgba(58, 42, 32, .3); }
+  .add h3 { margin: 0 0 8px; font-size: 20px; }
+  .add input {
+    width: 100%; font-family: inherit; font-size: 18px; padding: 10px; border: 3px solid var(--ink);
+    background: #fff; color: var(--ink); margin-bottom: 8px; border-radius: 0;
+  }
+  .err { color: var(--red); font-size: 15px; min-height: 18px; margin: -4px 0 6px; }
+  .hint { font-size: 15px; opacity: .7; text-align: center; margin: 10px 0 0; }
+</style>
 </head>
 <body data-day="3">
 <div class="wrap">
   <header class="day-head" id="day-head"></header>
 
   <main class="card hidden" id="content">
-    <!-- ===== DAY 3: Bucket list — content goes here ===== -->
-    <div class="placeholder">
-      <h2>Bucket list</h2>
-      <p class="muted">Coming soon…</p>
+    <!-- ===== DAY 3: Bucket list ===== -->
+    <p class="intro">Places we're going. Not "maybe". <b>Going.</b><br>Tap a trip to stamp your passport.</p>
+
+    <div class="passport" id="trips"></div>
+
+    <div class="add">
+      <h3>Add your own ✈️</h3>
+      <input id="place" placeholder="Where? (e.g. Iceland)" maxlength="40">
+      <input id="why" placeholder="Why? (the funnier the better)" maxlength="80">
+      <div class="err" id="err"></div>
+      <button class="btn" id="add-btn">Add to the list</button>
+      <a class="btn btn-reply" id="send">Send my list to Sofi</a>
     </div>
     <!-- ===== end of day 3 content ===== -->
   </main>
@@ -24,6 +59,53 @@
 </div>
 <script src="plop.js"></script>
 <script src="advent.js"></script>
-<script>initDay();</script>
+<script>
+  initDay();
+
+  // ---- edit the trips here ----
+  const TRIPS = [
+    { flag: '🇯🇵', place: 'Japan',      why: 'drugs are so kawaii' },
+    { flag: '🇨🇳', place: 'China',      why: 'our supplier is waiting' },
+    { flag: '🇰🇷', place: 'Korea',      why: 'another perm?' },
+    { flag: '🇰🇿', place: 'Kazakhstan', why: 'we need to ride horses together' },
+    { flag: '🇬🇧', place: 'London',     why: 'WE ARE GOING' }
+  ];
+
+  const stamps = store.get('trip-stamps', {});
+  const mine = store.get('my-trips', []);
+
+  function render() {
+    const box = document.getElementById('trips');
+    box.innerHTML = '';
+    [...TRIPS, ...mine.map(t => ({ ...t, flag: '📍', own: true }))].forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'trip' + (stamps[t.place] ? ' stamped' : '');
+      b.innerHTML = `<div class="flag">${t.flag}</div><div><b>${t.place}</b><i>${t.why || ''}</i>${t.own ? '<div class="mine">added by you</div>' : ''}</div><div class="stamp">WE'RE GOING</div>`;
+      b.onclick = () => {
+        stamps[t.place] = !stamps[t.place];
+        store.set('trip-stamps', stamps);
+        b.classList.toggle('stamped');
+      };
+      box.appendChild(b);
+    });
+    const all = [...TRIPS, ...mine].map(t => `• ${t.place}${t.why ? ' (' + t.why + ')' : ''}`).join('\n');
+    document.getElementById('send').href = whatsappLink('Day 3, our bucket list:\n' + all);
+  }
+
+  const place = document.getElementById('place');
+  const why = document.getElementById('why');
+  const err = document.getElementById('err');
+  [place, why].forEach(i => i.addEventListener('input', () => err.textContent = ''));
+  document.getElementById('add-btn').onclick = () => {
+    const p = place.value.trim();
+    if (!p) { err.textContent = 'Plop needs a place first'; return; }
+    mine.push({ place: p, why: why.value.trim() });
+    store.set('my-trips', mine);
+    place.value = ''; why.value = '';
+    render();
+    toast(`<div class="plop-xs">${plopSVG({ outfit: '#5B7FB0' })}</div><div><b>${p}</b><br>added to the list!</div>`);
+  };
+  render();
+</script>
 </body>
 </html>
